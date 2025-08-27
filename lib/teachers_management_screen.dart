@@ -8,6 +8,8 @@ class TeachersManagementScreen extends StatefulWidget {
 }
 
 class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
+  String? _selectedTeacherToRemove;
+  
   final List<Map<String, String>> _teachers = [
     {
       'name': 'John Smith',
@@ -42,6 +44,82 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
     _passwordController.dispose();
     _subjectController.dispose();
     super.dispose();
+  }
+
+  void _showRemoveTeacherDialog(int index) {
+    final teacher = _teachers[index];
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Remove Teacher'),
+          content: Text('Are you sure you want to remove ${teacher['name']}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _teachers.removeAt(index);
+                });
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${teacher['name']} removed successfully!'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showSelectTeacherDialog() async {
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Teacher'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _teachers.length,
+              itemBuilder: (context, index) {
+                final teacher = _teachers[index];
+                return ListTile(
+                  leading: const Icon(Icons.person),
+                  title: Text(teacher['name']!),
+                  subtitle: Text(teacher['email']!),
+                  onTap: () => Navigator.of(context).pop(teacher['name']),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+    if (selected != null) {
+      setState(() {
+        _selectedTeacherToRemove = selected;
+      });
+    }
   }
 
   void _showAddTeacherDialog() {
@@ -271,30 +349,42 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                                 ),
                               ],
                             ),
-                            trailing: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: teacher['status'] == 'Active'
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.red.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                teacher['status']!,
-                                style: TextStyle(
-                                  color: teacher['status'] == 'Active'
-                                      ? Colors.green
-                                      : Colors.red,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: teacher['status'] == 'Active'
+                                        ? Colors.green.withOpacity(0.1)
+                                        : Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    teacher['status']!,
+                                    style: TextStyle(
+                                      color: teacher['status'] == 'Active'
+                                          ? Colors.green
+                                          : Colors.red,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  onPressed: () => _showRemoveTeacherDialog(index),
+                                ),
+                              ],
                             ),
                             onTap: () {
                               // Show teacher details or edit
+                            },
+                            onLongPress: () {
+                              _showRemoveTeacherDialog(index);
                             },
                           ),
                         );

@@ -521,10 +521,8 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                         const begin = Offset(0.0, 1.0);
                         const end = Offset.zero;
                         const curve = Curves.easeInOutCubic;
-                        
                         var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
                         var offsetAnimation = animation.drive(tween);
-                        
                         return SlideTransition(position: offsetAnimation, child: child);
                       },
                       transitionDuration: const Duration(milliseconds: 600),
@@ -549,10 +547,8 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                         const begin = Offset(0.0, 1.0);
                         const end = Offset.zero;
                         const curve = Curves.easeInOutCubic;
-                        
                         var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
                         var offsetAnimation = animation.drive(tween);
-                        
                         return SlideTransition(position: offsetAnimation, child: child);
                       },
                       transitionDuration: const Duration(milliseconds: 600),
@@ -564,8 +560,8 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
             const SizedBox(width: 16),
             Expanded(
               child: _buildActionCard(
-                title: 'Users',
-                subtitle: 'Management',
+                title: 'Management',
+                subtitle: 'System',
                 icon: Icons.people,
                 color: Colors.orange,
                 onTap: () {
@@ -577,10 +573,8 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                         const begin = Offset(0.0, 1.0);
                         const end = Offset.zero;
                         const curve = Curves.easeInOutCubic;
-                        
                         var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
                         var offsetAnimation = animation.drive(tween);
-                        
                         return SlideTransition(position: offsetAnimation, child: child);
                       },
                       transitionDuration: const Duration(milliseconds: 600),
@@ -592,6 +586,33 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
           ],
         ),
       ],
+    );
+  }
+
+  void _openModal(Widget child) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        final size = MediaQuery.of(context).size;
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          clipBehavior: Clip.antiAlias,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: size.width * 0.95,
+              maxHeight: size.height * 0.9,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: child,
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -999,7 +1020,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.people),
-                label: 'Users',
+                label: 'Management',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.assessment),

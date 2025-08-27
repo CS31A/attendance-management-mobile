@@ -8,6 +8,14 @@ class UsersManagementScreen extends StatefulWidget {
 }
 
 class _UsersManagementScreenState extends State<UsersManagementScreen> {
+  String? _selectedUserToRemove;
+  
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  String _selectedUserType = 'teacher';
+
   final List<Map<String, dynamic>> _allUsers = [
     {
       'name': 'John Smith',
@@ -69,6 +77,199 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       return _allUsers.where((user) => user['type'] == 'teacher').toList();
     } else {
       return _allUsers.where((user) => user['type'] == 'student').toList();
+    }
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _showAddUserDialog() {
+    _usernameController.clear();
+    _emailController.clear();
+    _passwordController.clear();
+    _selectedUserType = 'teacher';
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Add New User'),
+              content: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // User Type Selection (no dropdown)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Wrap(
+                          spacing: 8,
+                          children: [
+                            ChoiceChip(
+                              label: const Text('Teacher'),
+                              selected: _selectedUserType == 'teacher',
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setState(() {
+                                    _selectedUserType = 'teacher';
+                                  });
+                                }
+                              },
+                            ),
+                            ChoiceChip(
+                              label: const Text('Student'),
+                              selected: _selectedUserType == 'student',
+                              onSelected: (selected) {
+                                if (selected) {
+                                  setState(() {
+                                    _selectedUserType = 'student';
+                                  });
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Username Field
+                      TextFormField(
+                        controller: _usernameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Username',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter username';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Email Field
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter email';
+                          }
+                          if (!value.contains('@')) {
+                            return 'Please enter valid email';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Password Field
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: const InputDecoration(
+                          labelText: 'Password',
+                          border: OutlineInputBorder(),
+                        ),
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter password';
+                          }
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      this.setState(() {
+                        _allUsers.add({
+                          'name': _usernameController.text,
+                          'email': _emailController.text,
+                          'role': _selectedUserType == 'teacher' ? 'Teacher' : 'Student',
+                          'status': 'Active',
+                          'type': _selectedUserType,
+                        });
+                      });
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${_selectedUserType == 'teacher' ? 'Teacher' : 'Student'} account added successfully!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Add User'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _showSelectUserDialog() async {
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        final users = _filteredUsers;
+        return AlertDialog(
+          title: const Text('Select User'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: users.length,
+              itemBuilder: (context, index) {
+                final user = users[index];
+                return ListTile(
+                  leading: Icon(user['type'] == 'teacher' ? Icons.person : Icons.school),
+                  title: Text(user['name']!),
+                  subtitle: Text('${user['email']} • ${user['role']}'),
+                  onTap: () => Navigator.of(context).pop(user['name'] as String),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+    if (selected != null) {
+      setState(() {
+        _selectedUserToRemove = selected;
+      });
     }
   }
 
@@ -186,11 +387,9 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                         ),
                       ),
                       ElevatedButton.icon(
-                        onPressed: () {
-                          // Show add user dialog
-                        },
+                        onPressed: _showAddUserDialog,
                         icon: const Icon(Icons.add),
-                        label: const Text('Add User'),
+                        label: const Text('Add Account'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
                           foregroundColor: Colors.white,
@@ -287,6 +486,9 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                             onTap: () {
                               // Show user details or edit
                             },
+                            onLongPress: () {
+                              _showRemoveUserDialog(index);
+                            },
                           ),
                         );
                       },
@@ -298,6 +500,44 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showRemoveUserDialog(int index) {
+    final user = _filteredUsers[index];
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Remove User'),
+          content: Text('Are you sure you want to remove ${user['name']}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _allUsers.removeWhere((u) => u['name'] == user['name'] && u['email'] == user['email']);
+                });
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${user['name']} removed successfully!'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
     );
   }
 

@@ -8,6 +8,8 @@ class StudentsManagementScreen extends StatefulWidget {
 }
 
 class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
+  String? _selectedStudentToRemove;
+  
   final List<Map<String, String>> _students = [
     {
       'name': 'Emma Wilson',
@@ -48,6 +50,82 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
     _passwordController.dispose();
     _gradeController.dispose();
     super.dispose();
+  }
+
+  void _showRemoveStudentDialog(int index) {
+    final student = _students[index];
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Remove Student'),
+          content: Text('Are you sure you want to remove ${student['name']}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _students.removeAt(index);
+                });
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${student['name']} removed successfully!'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showSelectStudentDialog() async {
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Student'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _students.length,
+              itemBuilder: (context, index) {
+                final student = _students[index];
+                return ListTile(
+                  leading: const Icon(Icons.school),
+                  title: Text(student['name']!),
+                  subtitle: Text(student['email']!),
+                  onTap: () => Navigator.of(context).pop(student['name']),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+    if (selected != null) {
+      setState(() {
+        _selectedStudentToRemove = selected;
+      });
+    }
   }
 
   void _showAddStudentDialog() {
@@ -278,30 +356,42 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
                                 ),
                               ],
                             ),
-                            trailing: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: student['status'] == 'Active'
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.red.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                student['status']!,
-                                style: TextStyle(
-                                  color: student['status'] == 'Active'
-                                      ? Colors.green
-                                      : Colors.red,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: student['status'] == 'Active'
+                                        ? Colors.green.withOpacity(0.1)
+                                        : Colors.red.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    student['status']!,
+                                    style: TextStyle(
+                                      color: student['status'] == 'Active'
+                                          ? Colors.green
+                                          : Colors.red,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  onPressed: () => _showRemoveStudentDialog(index),
+                                ),
+                              ],
                             ),
                             onTap: () {
                               // Show student details or edit
+                            },
+                            onLongPress: () {
+                              _showRemoveStudentDialog(index);
                             },
                           ),
                         );
