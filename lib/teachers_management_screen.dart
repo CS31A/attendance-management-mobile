@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_data.dart';
 
 class TeachersManagementScreen extends StatefulWidget {
   const TeachersManagementScreen({super.key});
@@ -9,27 +10,9 @@ class TeachersManagementScreen extends StatefulWidget {
 
 class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
   String? _selectedTeacherToRemove;
+  final TextEditingController _searchController = TextEditingController();
   
-  final List<Map<String, String>> _teachers = [
-    {
-      'name': 'John Smith',
-      'email': 'john.smith@school.edu',
-      'subject': 'Mathematics',
-      'status': 'Active',
-    },
-    {
-      'name': 'Sarah Johnson',
-      'email': 'sarah.johnson@school.edu',
-      'subject': 'English',
-      'status': 'Active',
-    },
-    {
-      'name': 'Michael Brown',
-      'email': 'michael.brown@school.edu',
-      'subject': 'Science',
-      'status': 'Active',
-    },
-  ];
+  List<Map<String, String>> get _teachers => AppData.teachers.value;
 
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -39,6 +22,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -60,10 +44,10 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _teachers.removeAt(index);
-                });
+              onPressed: () async {
+                final removed = _teachers[index];
+                await AppData.deleteByEmail(removed['email']!);
+                setState(() {});
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -128,23 +112,31 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
     _passwordController.clear();
     _subjectController.clear();
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: const Color(0xFFF7F8FA),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add New Teacher'),
-          content: Form(
+        final bottom = MediaQuery.of(context).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottom),
+          child: Form(
             key: _formKey,
             child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Text('Add Teacher', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Full Name',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(labelText: 'Full Name', filled: true, border: OutlineInputBorder()),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter teacher name';
@@ -155,16 +147,13 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(labelText: 'Email', filled: true, border: OutlineInputBorder()),
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter email';
                       }
-                      if (!value.contains('@')) {
+                      if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value)) {
                         return 'Please enter valid email';
                       }
                       return null;
@@ -172,29 +161,8 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
                     controller: _subjectController,
-                    decoration: const InputDecoration(
-                      labelText: 'Subject',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(labelText: 'Subject', filled: true, border: OutlineInputBorder()),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter subject';
@@ -202,38 +170,42 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                       return null;
                     },
                   ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              AppData.addTeacher({
+                                'name': _nameController.text,
+                                'email': _emailController.text,
+                                'subject': _subjectController.text,
+                                'status': 'Active',
+                              });
+                              setState(() {});
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Teacher added successfully!'), backgroundColor: Colors.green),
+                              );
+                            }
+                          },
+                          child: const Text('Save'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  setState(() {
-                    _teachers.add({
-                      'name': _nameController.text,
-                      'email': _emailController.text,
-                      'subject': _subjectController.text,
-                      'status': 'Active',
-                    });
-                  });
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Teacher added successfully!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              },
-              child: const Text('Add Teacher'),
-            ),
-          ],
         );
       },
     );
@@ -242,45 +214,49 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFF5F6F8),
       appBar: AppBar(
-        title: const Text('Teachers Management'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
+        title: const Text('Teachers'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: const [],
       ),
       body: Column(
         children: [
-          // Header Stats
+          // Top search + chips
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: Colors.blue,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
-            ),
-            child: Row(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Column(
               children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Total Teachers',
-                    _teachers.length.toString(),
-                    Icons.person,
-                    Colors.white,
-                  ),
+                Container(
+                  height: 44,
+                  decoration: BoxDecoration(color: const Color(0xFFF2F4F7), borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(children: [
+                    const Icon(Icons.search_rounded, color: Color(0xFF667085)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (_) => setState(() {}),
+                        decoration: const InputDecoration(hintText: 'Search teachers...', isCollapsed: true, border: InputBorder.none),
+                      ),
+                    )
+                  ]),
                 ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: _buildStatCard(
-                    'Active Teachers',
-                    _teachers.where((t) => t['status'] == 'Active').length.toString(),
-                    Icons.check_circle,
-                    Colors.white,
-                  ),
-                ),
+                const SizedBox(height: 8),
+                Row(children: [
+                  _statChip(Icons.people_alt_rounded, '${_teachers.length} Total'),
+                  const SizedBox(width: 8),
+                  _statChip(Icons.check_circle_rounded, '${_teachers.where((t) => t['status'] == 'Active').length} Active'),
+                ])
               ],
             ),
           ),
@@ -303,32 +279,30 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                           color: Colors.black87,
                         ),
                       ),
-                      ElevatedButton.icon(
-                        onPressed: _showAddTeacherDialog,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add Teacher'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
+                      const SizedBox.shrink(),
                     ],
                   ),
                   const SizedBox(height: 20),
                   Expanded(
                     child: ListView.builder(
-                      itemCount: _teachers.length,
+                      itemCount: _teachers.where((t) {
+                        final q = _searchController.text.trim().toLowerCase();
+                        if (q.isEmpty) return true;
+                        return t['name']!.toLowerCase().contains(q) || t['email']!.toLowerCase().contains(q) || t['subject']!.toLowerCase().contains(q);
+                      }).length,
                       itemBuilder: (context, index) {
-                        final teacher = _teachers[index];
+                        final data = _teachers.where((t) {
+                          final q = _searchController.text.trim().toLowerCase();
+                          if (q.isEmpty) return true;
+                          return t['name']!.toLowerCase().contains(q) || t['email']!.toLowerCase().contains(q) || t['subject']!.toLowerCase().contains(q);
+                        }).toList();
+                        final teacher = data[index];
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
                           child: ListTile(
                             leading: CircleAvatar(
                               backgroundColor: Colors.blue.withOpacity(0.1),
-                              child: Icon(
-                                Icons.person,
-                                color: Colors.blue,
-                              ),
+                              child: const Icon(Icons.person_rounded, color: Colors.blue),
                             ),
                             title: Text(
                               teacher['name']!,
@@ -349,40 +323,11 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                                 ),
                               ],
                             ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: teacher['status'] == 'Active'
-                                        ? Colors.green.withOpacity(0.1)
-                                        : Colors.red.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    teacher['status']!,
-                                    style: TextStyle(
-                                      color: teacher['status'] == 'Active'
-                                          ? Colors.green
-                                          : Colors.red,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                  onPressed: () => _showRemoveTeacherDialog(index),
-                                ),
-                              ],
+                            trailing: IconButton(
+                              icon: const Icon(Icons.more_vert_rounded),
+                              onPressed: () => _showTeacherActions(teacher),
                             ),
-                            onTap: () {
-                              // Show teacher details or edit
-                            },
+                            onTap: () => _showTeacherActions(teacher),
                             onLongPress: () {
                               _showRemoveTeacherDialog(index);
                             },
@@ -427,6 +372,48 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
             ),
             textAlign: TextAlign.center,
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statChip(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE4E7EC)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: const Color(0xFF344054)),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+
+  void _showTeacherActions(Map<String, String> teacher) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.delete_outline, color: Colors.red),
+            title: const Text('Delete'),
+            onTap: () {
+              Navigator.pop(context);
+              _showRemoveTeacherDialog(_teachers.indexOf(teacher));
+            },
+          ),
+          const SizedBox(height: 8),
         ],
       ),
     );

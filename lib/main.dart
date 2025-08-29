@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'forgot_password_screen.dart';
 import 'admin_dashboard.dart';
+import 'app_data.dart'
+;
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppStorage.init();
+  final loggedIn = await AppStorage.isLoggedIn();
+  runApp(MyApp(startLoggedIn: loggedIn));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool startLoggedIn;
+  const MyApp({super.key, required this.startLoggedIn});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +23,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const LoginScreen(),
+      home: startLoggedIn ? const AdminDashboard() : const LoginScreen(),
     );
   }
 }
@@ -88,7 +94,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         // Clear the form
         _usernameController.clear();
         _passwordController.clear();
-        // Navigate to admin dashboard with custom transition
+        // Navigate to admin dashboard with custom transition and persist session
+        AppStorage.setLoggedIn(true);
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(

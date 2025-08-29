@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_data.dart';
 
 class StudentsManagementScreen extends StatefulWidget {
   const StudentsManagementScreen({super.key});
@@ -9,45 +10,20 @@ class StudentsManagementScreen extends StatefulWidget {
 
 class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
   String? _selectedStudentToRemove;
+  final TextEditingController _searchController = TextEditingController();
   
-  final List<Map<String, String>> _students = [
-    {
-      'name': 'Emma Wilson',
-      'email': 'emma.wilson@student.edu',
-      'grade': 'Grade 10',
-      'status': 'Active',
-    },
-    {
-      'name': 'David Lee',
-      'email': 'david.lee@student.edu',
-      'grade': 'Grade 11',
-      'status': 'Active',
-    },
-    {
-      'name': 'Lisa Chen',
-      'email': 'lisa.chen@student.edu',
-      'grade': 'Grade 9',
-      'status': 'Active',
-    },
-    {
-      'name': 'Alex Rodriguez',
-      'email': 'alex.rodriguez@student.edu',
-      'grade': 'Grade 12',
-      'status': 'Active',
-    },
-  ];
+  List<Map<String, String>> get _students => AppData.students.value;
 
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _gradeController = TextEditingController();
 
   @override
   void dispose() {
+    _searchController.dispose();
     _nameController.dispose();
     _emailController.dispose();
-    _passwordController.dispose();
     _gradeController.dispose();
     super.dispose();
   }
@@ -66,10 +42,10 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _students.removeAt(index);
-                });
+              onPressed: () async {
+                final removed = _students[index];
+                await AppData.deleteByEmail(removed['email']!);
+                setState(() {});
                 Navigator.of(context).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -131,26 +107,33 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
   void _showAddStudentDialog() {
     _nameController.clear();
     _emailController.clear();
-    _passwordController.clear();
     _gradeController.clear();
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: const Color(0xFFF7F8FA),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add New Student'),
-          content: Form(
+        final bottom = MediaQuery.of(context).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottom),
+          child: Form(
             key: _formKey,
             child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Text('Add Student', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Full Name',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(labelText: 'Full Name', filled: true, border: OutlineInputBorder()),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter student name';
@@ -161,16 +144,13 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: const InputDecoration(labelText: 'Email', filled: true, border: OutlineInputBorder()),
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter email';
                       }
-                      if (!value.contains('@')) {
+                      if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value)) {
                         return 'Please enter valid email';
                       }
                       return null;
@@ -178,30 +158,8 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
                     controller: _gradeController,
-                    decoration: const InputDecoration(
-                      labelText: 'Grade Level',
-                      border: OutlineInputBorder(),
-                      hintText: 'e.g., Grade 10',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Grade Level', filled: true, border: OutlineInputBorder(), hintText: 'e.g., Grade 10'),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter grade level';
@@ -209,38 +167,42 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
                       return null;
                     },
                   ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              AppData.addStudent({
+                                'name': _nameController.text,
+                                'email': _emailController.text,
+                                'grade': _gradeController.text,
+                                'status': 'Active',
+                              });
+                              setState(() {});
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Student added successfully!'), backgroundColor: Colors.green),
+                              );
+                            }
+                          },
+                          child: const Text('Save'),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  setState(() {
-                    _students.add({
-                      'name': _nameController.text,
-                      'email': _emailController.text,
-                      'grade': _gradeController.text,
-                      'status': 'Active',
-                    });
-                  });
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Student added successfully!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                }
-              },
-              child: const Text('Add Student'),
-            ),
-          ],
         );
       },
     );
@@ -249,45 +211,49 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFF5F6F8),
       appBar: AppBar(
-        title: const Text('Students Management'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
+        title: const Text('Students'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: const [],
       ),
       body: Column(
         children: [
-          // Header Stats
+          // Top search + chips
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: Colors.green,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
-            ),
-            child: Row(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Column(
               children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Total Students',
-                    _students.length.toString(),
-                    Icons.school,
-                    Colors.white,
-                  ),
+                Container(
+                  height: 44,
+                  decoration: BoxDecoration(color: const Color(0xFFF2F4F7), borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(children: [
+                    const Icon(Icons.search_rounded, color: Color(0xFF667085)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (_) => setState(() {}),
+                        decoration: const InputDecoration(hintText: 'Search students...', isCollapsed: true, border: InputBorder.none),
+                      ),
+                    )
+                  ]),
                 ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: _buildStatCard(
-                    'Active Students',
-                    _students.where((s) => s['status'] == 'Active').length.toString(),
-                    Icons.check_circle,
-                    Colors.white,
-                  ),
-                ),
+                const SizedBox(height: 8),
+                Row(children: [
+                  _statChip(Icons.people_alt_rounded, '${_students.length} Total'),
+                  const SizedBox(width: 8),
+                  _statChip(Icons.check_circle_rounded, '${_students.where((t) => t['status'] == 'Active').length} Active'),
+                ])
               ],
             ),
           ),
@@ -310,32 +276,30 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
                           color: Colors.black87,
                         ),
                       ),
-                      ElevatedButton.icon(
-                        onPressed: _showAddStudentDialog,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add Student'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
+                      const SizedBox.shrink(),
                     ],
                   ),
                   const SizedBox(height: 20),
                   Expanded(
                     child: ListView.builder(
-                      itemCount: _students.length,
+                      itemCount: _students.where((s) {
+                        final q = _searchController.text.trim().toLowerCase();
+                        if (q.isEmpty) return true;
+                        return s['name']!.toLowerCase().contains(q) || s['email']!.toLowerCase().contains(q) || s['grade']!.toLowerCase().contains(q);
+                      }).length,
                       itemBuilder: (context, index) {
-                        final student = _students[index];
+                        final data = _students.where((s) {
+                          final q = _searchController.text.trim().toLowerCase();
+                          if (q.isEmpty) return true;
+                          return s['name']!.toLowerCase().contains(q) || s['email']!.toLowerCase().contains(q) || s['grade']!.toLowerCase().contains(q);
+                        }).toList();
+                        final student = data[index];
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
                           child: ListTile(
                             leading: CircleAvatar(
                               backgroundColor: Colors.green.withOpacity(0.1),
-                              child: Icon(
-                                Icons.school,
-                                color: Colors.green,
-                              ),
+                              child: const Icon(Icons.school, color: Colors.green),
                             ),
                             title: Text(
                               student['name']!,
@@ -356,42 +320,13 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
                                 ),
                               ],
                             ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: student['status'] == 'Active'
-                                        ? Colors.green.withOpacity(0.1)
-                                        : Colors.red.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    student['status']!,
-                                    style: TextStyle(
-                                      color: student['status'] == 'Active'
-                                          ? Colors.green
-                                          : Colors.red,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                  onPressed: () => _showRemoveStudentDialog(index),
-                                ),
-                              ],
+                            trailing: IconButton(
+                              icon: const Icon(Icons.more_vert_rounded),
+                              onPressed: () => _showStudentActions(student),
                             ),
-                            onTap: () {
-                              // Show student details or edit
-                            },
+                            onTap: () => _showStudentActions(student),
                             onLongPress: () {
-                              _showRemoveStudentDialog(index);
+                              _showRemoveStudentDialog(_students.indexOf(student));
                             },
                           ),
                         );
@@ -407,33 +342,44 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _statChip(IconData icon, String text) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE4E7EC)),
       ),
-      child: Column(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 30),
+          Icon(icon, size: 16, color: const Color(0xFF344054)),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+
+  void _showStudentActions(Map<String, String> student) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          
+          ListTile(
+            leading: const Icon(Icons.delete_outline, color: Colors.red),
+            title: const Text('Delete'),
+            onTap: () {
+              Navigator.pop(context);
+              _showRemoveStudentDialog(_students.indexOf(student));
+            },
+          ),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            title,
-            style: TextStyle(
-              color: color.withOpacity(0.8),
-              fontSize: 12,
-            ),
-            textAlign: TextAlign.center,
-          ),
         ],
       ),
     );

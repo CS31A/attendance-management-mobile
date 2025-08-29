@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_data.dart';
 
 class UsersManagementScreen extends StatefulWidget {
   const UsersManagementScreen({super.key});
@@ -8,568 +9,841 @@ class UsersManagementScreen extends StatefulWidget {
 }
 
 class _UsersManagementScreenState extends State<UsersManagementScreen> {
-  String? _selectedUserToRemove;
-  
-  final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  String _selectedUserType = 'teacher';
-
-  final List<Map<String, dynamic>> _allUsers = [
-    {
-      'name': 'John Smith',
-      'email': 'john.smith@school.edu',
-      'role': 'Teacher',
-      'subject': 'Mathematics',
-      'status': 'Active',
-      'type': 'teacher',
-    },
-    {
-      'name': 'Sarah Johnson',
-      'email': 'sarah.johnson@school.edu',
-      'role': 'Teacher',
-      'subject': 'English',
-      'status': 'Active',
-      'type': 'teacher',
-    },
-    {
-      'name': 'Emma Wilson',
-      'email': 'emma.wilson@student.edu',
-      'role': 'Student',
-      'grade': 'Grade 10',
-      'status': 'Active',
-      'type': 'student',
-    },
-    {
-      'name': 'David Lee',
-      'email': 'david.lee@student.edu',
-      'role': 'Student',
-      'grade': 'Grade 11',
-      'status': 'Active',
-      'type': 'student',
-    },
-    {
-      'name': 'Michael Brown',
-      'email': 'michael.brown@school.edu',
-      'role': 'Teacher',
-      'subject': 'Science',
-      'status': 'Active',
-      'type': 'teacher',
-    },
-    {
-      'name': 'Lisa Chen',
-      'email': 'lisa.chen@student.edu',
-      'role': 'Student',
-      'grade': 'Grade 9',
-      'status': 'Active',
-      'type': 'student',
-    },
-  ];
+  final TextEditingController _searchController = TextEditingController();
+  final GlobalKey<FormState> _editFormKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _createFormKey = GlobalKey<FormState>();
 
   String _selectedFilter = 'All';
-  final List<String> _filterOptions = ['All', 'Teachers', 'Students'];
+  String _selectedRoleFilter = 'All Roles';
+  final List<String> _roles = ['All Roles', 'Admin', 'Teacher', 'Student'];
 
-  List<Map<String, dynamic>> get _filteredUsers {
-    if (_selectedFilter == 'All') {
-      return _allUsers;
-    } else if (_selectedFilter == 'Teachers') {
-      return _allUsers.where((user) => user['type'] == 'teacher').toList();
-    } else {
-      return _allUsers.where((user) => user['type'] == 'student').toList();
-    }
-  }
+  List<Map<String, dynamic>> get _users => AppData.users.value;
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
-  void _showAddUserDialog() {
-    _usernameController.clear();
-    _emailController.clear();
-    _passwordController.clear();
-    _selectedUserType = 'teacher';
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add New User'),
-              content: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // User Type Selection (no dropdown)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Wrap(
-                          spacing: 8,
-                          children: [
-                            ChoiceChip(
-                              label: const Text('Teacher'),
-                              selected: _selectedUserType == 'teacher',
-                              onSelected: (selected) {
-                                if (selected) {
-                                  setState(() {
-                                    _selectedUserType = 'teacher';
-                                  });
-                                }
-                              },
-                            ),
-                            ChoiceChip(
-                              label: const Text('Student'),
-                              selected: _selectedUserType == 'student',
-                              onSelected: (selected) {
-                                if (selected) {
-                                  setState(() {
-                                    _selectedUserType = 'student';
-                                  });
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Username Field
-                      TextFormField(
-                        controller: _usernameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Username',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter username';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Email Field
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter email';
-                          }
-                          if (!value.contains('@')) {
-                            return 'Please enter valid email';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Password Field
-                      TextFormField(
-                        controller: _passwordController,
-                        decoration: const InputDecoration(
-                          labelText: 'Password',
-                          border: OutlineInputBorder(),
-                        ),
-                        obscureText: true,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter password';
-                          }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      this.setState(() {
-                        _allUsers.add({
-                          'name': _usernameController.text,
-                          'email': _emailController.text,
-                          'role': _selectedUserType == 'teacher' ? 'Teacher' : 'Student',
-                          'status': 'Active',
-                          'type': _selectedUserType,
-                        });
-                      });
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('${_selectedUserType == 'teacher' ? 'Teacher' : 'Student'} account added successfully!'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    }
-                  },
-                  child: const Text('Add User'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<void> _showSelectUserDialog() async {
-    final selected = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) {
-        final users = _filteredUsers;
-        return AlertDialog(
-          title: const Text('Select User'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: users.length,
-              itemBuilder: (context, index) {
-                final user = users[index];
-                return ListTile(
-                  leading: Icon(user['type'] == 'teacher' ? Icons.person : Icons.school),
-                  title: Text(user['name']!),
-                  subtitle: Text('${user['email']} • ${user['role']}'),
-                  onTap: () => Navigator.of(context).pop(user['name'] as String),
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-    if (selected != null) {
-      setState(() {
-        _selectedUserToRemove = selected;
-      });
-    }
+  List<Map<String, dynamic>> get _visibleUsers {
+    final query = _searchController.text.trim().toLowerCase();
+    return _users.where((u) {
+      final matchesQuery = query.isEmpty ||
+          u['name'].toString().toLowerCase().contains(query) ||
+          u['email'].toString().toLowerCase().contains(query);
+      final matchesRole = _selectedRoleFilter == 'All Roles' || u['role'] == _selectedRoleFilter;
+      return matchesQuery && matchesRole;
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFF5F6F8),
       appBar: AppBar(
-        title: const Text('Users Management'),
-        backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
+        title: const Text('Users'),
         elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          IconButton(
+            onPressed: _openCreateUser,
+            icon: const Icon(Icons.add, size: 22),
+          )
+        ],
       ),
       body: Column(
         children: [
-          // Header Stats
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
+          _buildSearchAndFilters(context),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _visibleUsers.length,
+              itemBuilder: (context, index) {
+                final user = _visibleUsers[index];
+                return _buildUserTile(user);
+              },
             ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: null,
+    );
+  }
+
+  Widget _buildSearchAndFilters(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      color: Colors.white,
+      child: Column(
+        children: [
+          Container(
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF2F4F7),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
+                const Icon(Icons.search_rounded, color: Color(0xFF667085), size: 20),
+                const SizedBox(width: 8),
                 Expanded(
-                  child: _buildStatCard(
-                    'Total Users',
-                    _allUsers.length.toString(),
-                    Icons.people,
-                    Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: _buildStatCard(
-                    'Active Users',
-                    _allUsers.where((u) => u['status'] == 'Active').length.toString(),
-                    Icons.check_circle,
-                    Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: _buildStatCard(
-                    'Teachers',
-                    _allUsers.where((u) => u['type'] == 'teacher').length.toString(),
-                    Icons.person,
-                    Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: _buildStatCard(
-                    'Students',
-                    _allUsers.where((u) => u['type'] == 'student').length.toString(),
-                    Icons.school,
-                    Colors.white,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: const InputDecoration(
+                      hintText: 'Search users...',
+                      isCollapsed: true,
+                      border: InputBorder.none,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          
-          // Filter and Users List
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Filter Section
+          const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Text(
-                        'Filter by:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      ...(_filterOptions.map((filter) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: FilterChip(
-                          label: Text(filter),
-                          selected: _selectedFilter == filter,
-                          onSelected: (selected) {
-                            setState(() {
-                              _selectedFilter = filter;
-                            });
-                          },
-                          selectedColor: Colors.orange.withOpacity(0.2),
-                          checkmarkColor: Colors.orange,
-                        ),
-                      ))),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Users List Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '${_selectedFilter} Users (${_filteredUsers.length})',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: _showAddUserDialog,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add Account'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Users List
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: _filteredUsers.length,
-                      itemBuilder: (context, index) {
-                        final user = _filteredUsers[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: user['type'] == 'teacher' 
-                                  ? Colors.blue.withOpacity(0.1)
-                                  : Colors.green.withOpacity(0.1),
-                              child: Icon(
-                                user['type'] == 'teacher' ? Icons.person : Icons.school,
-                                color: user['type'] == 'teacher' ? Colors.blue : Colors.green,
-                              ),
-                            ),
-                            title: Text(
-                              user['name']!,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(user['email']!),
-                                Text(
-                                  user['type'] == 'teacher' 
-                                      ? 'Subject: ${user['subject']}'
-                                      : 'Grade: ${user['grade']}',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.only(top: 4),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: user['type'] == 'teacher'
-                                        ? Colors.blue.withOpacity(0.1)
-                                        : Colors.green.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    user['role']!,
-                                    style: TextStyle(
-                                      color: user['type'] == 'teacher'
-                                          ? Colors.blue
-                                          : Colors.green,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            trailing: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: user['status'] == 'Active'
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.red.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                user['status']!,
-                                style: TextStyle(
-                                  color: user['status'] == 'Active'
-                                      ? Colors.green
-                                      : Colors.red,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            onTap: () {
-                              // Show user details or edit
-                            },
-                            onLongPress: () {
-                              _showRemoveUserDialog(index);
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
+              Expanded(child: _buildRoleDropdown()),
+            ],
           ),
         ],
       ),
     );
   }
 
-  void _showRemoveUserDialog(int index) {
-    final user = _filteredUsers[index];
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Remove User'),
-          content: Text('Are you sure you want to remove ${user['name']}?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _allUsers.removeWhere((u) => u['name'] == user['name'] && u['email'] == user['email']);
-                });
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${user['name']} removed successfully!'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Remove'),
-            ),
+  Widget _buildRoleDropdown() {
+    return Container(
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE4E7EC)),
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedRoleFilter,
+          isExpanded: true,
+          icon: const Icon(Icons.arrow_drop_down),
+          items: _roles.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+          onChanged: (val) => setState(() => _selectedRoleFilter = val ?? 'All Roles'),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOutlinedPill({required IconData icon, required String label, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFE4E7EC)),
+          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: const Color(0xFF344054)),
+            const SizedBox(width: 6),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserTile(Map<String, dynamic> user) {
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      color: Colors.white,
+                          child: ListTile(
+                            leading: CircleAvatar(
+          backgroundColor: _colorFrom(user['color']).withOpacity(0.12),
+          backgroundImage: NetworkImage(_avatarFromName(user['name'])),
+          child: Icon(Icons.person, color: _colorFrom(user['color'])),
+        ),
+        title: Row(
+                              children: [
+            Expanded(
+                                  child: Text(
+                user['name'],
+                style: const TextStyle(fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+        subtitle: Text(user['role']),
+        trailing: IconButton(
+          icon: const Icon(Icons.more_vert_rounded),
+          onPressed: () => _showUserActionSheet(user),
+        ),
+      ),
+    );
+  }
+
+  void _showUserActionSheet(Map<String, dynamic> user) {
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: _colorFrom(user['color']).withOpacity(0.12),
+                    child: Icon(Icons.account_circle_rounded, color: _colorFrom(user['color'])),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(user['name'], style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Text(user['email'], style: const TextStyle(color: Color(0xFF667085), fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: const Text('Edit user'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openEditScreen(user);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.red),
+                title: const Text('Delete user'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _confirmDelete(user);
+                },
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              )
+            ],
+          ),
         );
       },
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
+  void _openEditScreen(Map<String, dynamic> user) {
+    final Map<String, dynamic> working = Map<String, dynamic>.from(user);
+    String name = working['name'];
+    String email = working['email'];
+    String phone = working['phone'];
+    String role = working['role'];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: const Color(0xFFF7F8FA),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+      builder: (ctx) {
+        final bottom = MediaQuery.of(ctx).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottom),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Form(
+              key: _editFormKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Edit User', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 12),
+                    _sheetTextField(
+                      label: 'Name',
+                      initialValue: name,
+                      onChanged: (v) => name = v,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Please enter a name.';
+                        // Letters, spaces and common separators only; disallow digits
+                        final valid = RegExp(r"^[A-Za-z .'-]+").hasMatch(v.trim()) && !RegExp(r"\\d").hasMatch(v);
+                        return valid ? null : 'Name cannot contain numbers.';
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _sheetTextField(
+                      label: 'Email',
+                      initialValue: email,
+                      keyboardType: TextInputType.emailAddress,
+                      onChanged: (v) => email = v,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Please enter an email address.';
+                        final gmail = RegExp(r'^[^@\s]+@gmail\.com$').hasMatch(v.trim().toLowerCase());
+                        if (!gmail) return 'Only Gmail addresses are accepted (example@gmail.com).';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _sheetTextField(
+                      label: 'Phone Number',
+                      initialValue: phone,
+                      keyboardType: TextInputType.phone,
+                      onChanged: (v) => phone = v,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Please enter a phone number.';
+                        final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
+                        if (digits.length != 11) return 'Phone number must be exactly 11 digits.';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _sheetDropdown(
+                      label: 'Role',
+                      value: role,
+                      items: const ['Admin', 'Teacher', 'Student'],
+                      onChanged: (v) => role = v,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              if (_editFormKey.currentState!.validate()) {
+                                setState(() {
+                                  user['name'] = name;
+                                  user['email'] = email;
+                                  user['phone'] = phone;
+                                  user['role'] = role;
+                                });
+                                await AppStorage.save();
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('User updated'), backgroundColor: Colors.green),
+                                );
+                              }
+                            },
+                            child: const Text('Save Changes'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          Text(
-            title,
-            style: TextStyle(
-              color: color.withOpacity(0.8),
-              fontSize: 10,
+        );
+      },
+    );
+  }
+
+  void _openCreateUser() {
+    String name = '';
+    String email = '';
+    String phone = '';
+    String role = 'Teacher';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: const Color(0xFFF7F8FA),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        final bottom = MediaQuery.of(ctx).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottom),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Form(
+              key: _createFormKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Add User', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 12),
+                    _sheetTextField(
+                      label: 'Name',
+                      initialValue: '',
+                      onChanged: (v) => name = v,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Please enter a name.';
+                        final valid = RegExp(r"^[A-Za-z .'-]+$").hasMatch(v.trim());
+                        return valid ? null : 'Name cannot contain numbers.';
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _sheetTextField(
+                      label: 'Email',
+                      initialValue: '',
+                      keyboardType: TextInputType.emailAddress,
+                      onChanged: (v) => email = v,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Please enter an email address.';
+                        final gmail = RegExp(r'^[^@\s]+@gmail\.com$').hasMatch(v.trim().toLowerCase());
+                        return gmail ? null : 'Only Gmail addresses are accepted (example@gmail.com).';
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _sheetTextField(
+                      label: 'Phone Number',
+                      initialValue: '',
+                      keyboardType: TextInputType.phone,
+                      onChanged: (v) => phone = v,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Please enter a phone number.';
+                        final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
+                        if (digits.length != 11) return 'Phone number must be exactly 11 digits.';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _sheetDropdown(
+                      label: 'Role',
+                      value: role,
+                      items: const ['Teacher', 'Student', 'Admin'],
+                      onChanged: (v) => role = v,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              if (_createFormKey.currentState!.validate()) {
+                                final color = _roleColor(role);
+                                // Add to Users store
+                                final newUsers = List<Map<String, dynamic>>.from(AppData.users.value)
+                                  ..add({'name': name, 'email': email, 'role': role, 'status': 'Active', 'phone': phone, 'color': color.value});
+                                AppData.users.value = newUsers;
+
+                                // Add to role-specific store
+                                if (role == 'Teacher') {
+                                  await AppData.addTeacher({'name': name, 'email': email, 'subject': 'N/A', 'status': 'Active'});
+                                } else if (role == 'Student') {
+                                  await AppData.addStudent({'name': name, 'email': email, 'grade': 'Grade', 'status': 'Active'});
+                                }
+
+                                setState(() {});
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('User added'), backgroundColor: Colors.green),
+                                );
+                              }
+                            },
+                            child: const Text('Add User'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
-            textAlign: TextAlign.center,
+          ),
+        );
+      },
+    );
+  }
+
+  Color _roleColor(String role) {
+    switch (role) {
+      case 'Teacher':
+        return Colors.purple;
+      case 'Student':
+        return Colors.teal;
+      case 'Admin':
+      default:
+        return Colors.blue;
+    }
+  }
+
+  Color _colorFrom(dynamic value) {
+    if (value is Color) return value;
+    if (value is int) return Color(value);
+    final parsed = int.tryParse(value?.toString() ?? '');
+    return parsed != null ? Color(parsed) : Colors.blue;
+  }
+
+  void _confirmDelete(Map<String, dynamic> user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete user'),
+        content: Text('Are you sure you want to delete ${user['name']}?'),
+          actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              onPressed: () async {
+              await AppData.deleteByEmail(user['email']);
+              setState(() {});
+              Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('User deleted'), backgroundColor: Colors.red),
+              );
+            },
+            child: const Text('Delete user'),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLabeledField({
+    required String label,
+    required String initialValue,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+        TextFormField(
+          initialValue: initialValue,
+          keyboardType: keyboardType,
+          validator: validator,
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDropdownRow({
+    required String label,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: value,
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          onChanged: (v) => onChanged(v ?? value),
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          validator: (v) => (v == null || v.isEmpty) ? 'Please select a ${label.toLowerCase()}.' : null,
+        ),
+      ],
+    );
+  }
+
+  // Bottom-sheet styled field and dropdown to match the screenshot
+  Widget _sheetTextField({
+    required String label,
+    required String initialValue,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        TextFormField(
+          initialValue: initialValue,
+          keyboardType: keyboardType,
+          validator: validator,
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFE4E7EC)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFF98A2B3)),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.red),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _sheetDropdown({
+    required String label,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: value,
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          onChanged: (v) => onChanged(v ?? value),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFE4E7EC)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFF98A2B3)),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.red),
+            ),
+          ),
+          validator: (v) => (v == null || v.isEmpty) ? 'Please select a role.' : null,
+        ),
+      ],
+    );
+  }
+
+  String _avatarFromName(String name) {
+    final seed = name.hashCode % 10;
+    // Use DiceBear avatars for quick placeholders
+    return 'https://api.dicebear.com/7.x/initials/png?seed=$seed&backgroundType=gradientLinear&fontFamily=Inter&chars=2';
+  }
+
+}
+
+class _EditUserScreen extends StatefulWidget {
+  final Map<String, dynamic> user;
+  final ValueChanged<Map<String, dynamic>> onSave;
+  const _EditUserScreen({required this.user, required this.onSave});
+
+  @override
+  State<_EditUserScreen> createState() => _EditUserScreenState();
+}
+
+class _EditUserScreenState extends State<_EditUserScreen> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late String name;
+  late String email;
+  late String phone;
+  late String role;
+
+  @override
+  void initState() {
+    super.initState();
+    name = widget.user['name'];
+    email = widget.user['email'];
+    phone = widget.user['phone'];
+    role = widget.user['role'];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit User'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      backgroundColor: const Color(0xFFF5F6F8),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              _labeledField(
+                label: 'Name',
+                initialValue: name,
+                onChanged: (v) => name = v,
+                validator: (v) => v == null || v.isEmpty ? 'Please enter a name.' : null,
+              ),
+              const SizedBox(height: 12),
+              _labeledField(
+                label: 'Email',
+                initialValue: email,
+                keyboardType: TextInputType.emailAddress,
+                onChanged: (v) => email = v,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Please enter an email address.';
+                  final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v);
+                  return ok ? null : 'Please enter a valid email address.';
+                },
+              ),
+              const SizedBox(height: 12),
+              _labeledField(
+                label: 'Phone Number',
+                initialValue: phone,
+                keyboardType: TextInputType.phone,
+                onChanged: (v) => phone = v,
+                validator: (v) => v == null || v.isEmpty ? 'Please enter a phone number.' : null,
+              ),
+              const SizedBox(height: 12),
+              _dropdownRow(
+                label: 'Role',
+                value: role,
+                items: const ['Admin', 'Teacher', 'Student'],
+                onChanged: (v) => role = v,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          widget.onSave({
+                            'name': name,
+                            'email': email,
+                            'phone': phone,
+                            'role': role,
+                          });
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: const Text('Save Changes'),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _labeledField({
+    required String label,
+    required String initialValue,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        TextFormField(
+          initialValue: initialValue,
+          keyboardType: keyboardType,
+          validator: validator,
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _dropdownRow({
+    required String label,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: value,
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          onChanged: (v) => onChanged(v ?? value),
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          validator: (v) => (v == null || v.isEmpty) ? 'Please select a ${label.toLowerCase()}.' : null,
+        ),
+      ],
     );
   }
 }
