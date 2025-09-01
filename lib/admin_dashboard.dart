@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'teachers_management_screen.dart';
 import 'students_management_screen.dart';
 import 'users_management_screen.dart';
+import 'app_data.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -585,6 +586,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
             ),
           ],
         ),
+
       ],
     );
   }
@@ -1035,5 +1037,76 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
         ),
       ),
     );
+  }
+
+  void _showClearDataDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Clear All Data'),
+          content: const Text('Are you sure you want to clear all data?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                AppData.teachers.value = [];
+                AppData.students.value = [];
+                AppData.users.value = [];
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Data cleared!')),
+                );
+              },
+              child: const Text('Clear'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _addSampleData() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add Sample Data'),
+          content: const Text('Add sample teachers and students?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                AppData.teachers.value = [
+                  {'name': 'John Smith', 'email': 'john.smith@school.edu', 'subject': 'Mathematics', 'status': 'Active'},
+                  {'name': 'Sarah Johnson', 'email': 'sarah.johnson@school.edu', 'subject': 'English', 'status': 'Active'},
+                ];
+                
+                AppData.students.value = [
+                  {'name': 'Emma Wilson', 'email': 'emma.wilson@student.edu', 'grade': 'Grade 10', 'status': 'Active'},
+                  {'name': 'David Lee', 'email': 'david.lee@student.edu', 'grade': 'Grade 11', 'status': 'Active'},
+                ];
+                
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Sample data added!')),
+                );
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _debugStorage() async {
+    await AppData.debugStorage();
   }
 }
