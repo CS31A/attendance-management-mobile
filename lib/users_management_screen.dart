@@ -316,15 +316,12 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                     const SizedBox(height: 12),
                     _sheetTextField(
                       label: 'Phone Number',
-                      initialValue: phone,
+                      initialValue: phone.startsWith('63+') ? phone.substring(3) : phone,
                       keyboardType: TextInputType.phone,
-                      onChanged: (v) => phone = v,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Please enter a phone number.';
-                        final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
-                        if (digits.length != 11) return 'Phone number must be exactly 11 digits.';
-                        return null;
-                      },
+                      onChanged: (v) => phone = '63+$v',
+                      validator: _validatePhilippinePhone,
+                      prefixText: '63+',
+                      maxLength: 10,
                     ),
                     const SizedBox(height: 12),
                     _sheetDropdown(
@@ -431,13 +428,10 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       label: 'Phone Number',
                       initialValue: '',
                       keyboardType: TextInputType.phone,
-                      onChanged: (v) => phone = v,
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Please enter a phone number.';
-                        final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
-                        if (digits.length != 11) return 'Phone number must be exactly 11 digits.';
-                        return null;
-                      },
+                      onChanged: (v) => phone = '63+$v',
+                      validator: _validatePhilippinePhone,
+                      prefixText: '63+',
+                      maxLength: 10,
                     ),
                     const SizedBox(height: 12),
                     _sheetDropdown(
@@ -512,6 +506,37 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     if (value is int) return Color(value);
     final parsed = int.tryParse(value?.toString() ?? '');
     return parsed != null ? Color(parsed) : Colors.blue;
+  }
+
+  // Philippine mobile number validation
+  String? _validatePhilippinePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter a phone number.';
+    }
+    
+    final cleanValue = value.trim();
+    
+    // The input field only contains digits (without 63+ prefix)
+    // because prefixText is just visual and onChanged adds 63+ to the stored value
+    final digits = cleanValue.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    // Check if contains any non-numeric characters
+    if (cleanValue.contains(RegExp(r'[^0-9]'))) {
+      return 'Phone number can only contain numbers.';
+    }
+    
+    // Check if too short (less than 10 digits)
+    // Note: maxLength prevents exceeding 10 digits, so we only check minimum
+    if (digits.length < 10) {
+      return 'Phone number must be 10 digits after 63+ (total 11 digits).';
+    }
+    
+    // Check if the number is valid (not all zeros, etc.)
+    if (digits == '0000000000') {
+      return 'Please enter a valid phone number.';
+    }
+    
+    return null; // Valid format
   }
 
   void _confirmDelete(Map<String, dynamic> user) {
@@ -599,6 +624,9 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     TextInputType? keyboardType,
     String? Function(String?)? validator,
     required ValueChanged<String> onChanged,
+    String? prefixText,
+    int? maxLength,
+    String? hintText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -610,10 +638,14 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           keyboardType: keyboardType,
           validator: validator,
           onChanged: onChanged,
+          maxLength: maxLength,
           decoration: InputDecoration(
             isDense: true,
             filled: true,
             fillColor: Colors.white,
+            prefixText: prefixText,
+            hintText: hintText,
+            counterText: '', // Hide character counter
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -747,10 +779,11 @@ class _EditUserScreenState extends State<_EditUserScreen> {
               const SizedBox(height: 12),
               _labeledField(
                 label: 'Phone Number',
-                initialValue: phone,
+                initialValue: phone.startsWith('63+') ? phone.substring(3) : phone,
                 keyboardType: TextInputType.phone,
-                onChanged: (v) => phone = v,
-                validator: (v) => v == null || v.isEmpty ? 'Please enter a phone number.' : null,
+                onChanged: (v) => phone = '63+$v',
+                validator: _validatePhilippinePhone,
+                maxLength: 10,
               ),
               const SizedBox(height: 12),
               _dropdownRow(
@@ -794,12 +827,45 @@ class _EditUserScreenState extends State<_EditUserScreen> {
     );
   }
 
+  // Philippine mobile number validation
+  String? _validatePhilippinePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter a phone number.';
+    }
+    
+    final cleanValue = value.trim();
+    
+    // The input field only contains digits (without 63+ prefix)
+    // because prefixText is just visual and onChanged adds 63+ to the stored value
+    final digits = cleanValue.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    // Check if contains any non-numeric characters
+    if (cleanValue.contains(RegExp(r'[^0-9]'))) {
+      return 'Phone number can only contain numbers.';
+    }
+    
+    // Check if too short (less than 10 digits)
+    // Note: maxLength prevents exceeding 10 digits, so we only check minimum
+    if (digits.length < 10) {
+      return 'Phone number must be 10 digits after 63+ (total 11 digits).';
+    }
+    
+    // Check if the number is valid (not all zeros, etc.)
+    if (digits == '0000000000') {
+      return 'Please enter a valid phone number.';
+    }
+    
+    return null; // Valid format
+  }
+
   Widget _labeledField({
     required String label,
     required String initialValue,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
     required ValueChanged<String> onChanged,
+    int? maxLength,
+    String? hintText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -811,10 +877,13 @@ class _EditUserScreenState extends State<_EditUserScreen> {
           keyboardType: keyboardType,
           validator: validator,
           onChanged: onChanged,
+          maxLength: maxLength,
           decoration: InputDecoration(
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            hintText: hintText,
+            counterText: '', // Hide character counter
           ),
         ),
       ],
