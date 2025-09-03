@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'app_data.dart';
 
 class UsersManagementScreen extends StatefulWidget {
@@ -309,9 +308,8 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       onChanged: (v) => email = v,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return 'Please enter an email address.';
-                        final gmail = RegExp(r'^[^@\s]+@gmail\.com$').hasMatch(v.trim().toLowerCase());
-                        if (!gmail) return 'Only Gmail addresses are accepted (example@gmail.com).';
-                        return null;
+                        final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                        return emailRegex.hasMatch(v.trim()) ? null : 'Please enter a valid email address.';
                       },
                     ),
                     const SizedBox(height: 12),
@@ -323,7 +321,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       validator: _validatePhilippinePhone,
                       prefixText: '63+',
                       maxLength: 10,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                     const SizedBox(height: 12),
                     _sheetDropdown(
@@ -346,18 +343,13 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                           child: ElevatedButton(
                             onPressed: () async {
                               if (_editFormKey.currentState!.validate()) {
-                                // Update user data across all lists
-                                final updatedUser = {
-                                  'name': name,
-                                  'email': email,
-                                  'phone': phone,
-                                  'role': role,
-                                  'status': user['status'] ?? 'Active',
-                                  'color': user['color'] ?? Colors.blue.value,
-                                };
-                                
-                                await AppData.updateUser(updatedUser);
-                                setState(() {});
+                                setState(() {
+                                  user['name'] = name;
+                                  user['email'] = email;
+                                  user['phone'] = phone;
+                                  user['role'] = role;
+                                });
+                                await AppStorage.save();
                                 Navigator.pop(ctx);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('User updated'), backgroundColor: Colors.green),
@@ -383,6 +375,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     String name = '';
     String email = '';
     String phone = '';
+    String password = '';
     String role = 'Teacher';
 
     showModalBottomSheet(
@@ -426,8 +419,8 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       onChanged: (v) => email = v,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return 'Please enter an email address.';
-                        final gmail = RegExp(r'^[^@\s]+@gmail\.com$').hasMatch(v.trim().toLowerCase());
-                        return gmail ? null : 'Only Gmail addresses are accepted (example@gmail.com).';
+                        final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                        return emailRegex.hasMatch(v.trim()) ? null : 'Please enter a valid email address.';
                       },
                     ),
                     const SizedBox(height: 12),
@@ -439,7 +432,15 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       validator: _validatePhilippinePhone,
                       prefixText: '63+',
                       maxLength: 10,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    ),
+                    const SizedBox(height: 12),
+                    _sheetTextField(
+                      label: 'Password',
+                      initialValue: '',
+                      keyboardType: TextInputType.visiblePassword,
+                      onChanged: (v) => password = v,
+                      validator: _validatePassword,
+                      maxLength: 20,
                     ),
                     const SizedBox(height: 12),
                     _sheetDropdown(
@@ -465,7 +466,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                                 final color = _roleColor(role);
                                 // Add to Users store
                                 final newUsers = List<Map<String, dynamic>>.from(AppData.users.value)
-                                  ..add({'name': name, 'email': email, 'role': role, 'status': 'Active', 'phone': phone, 'color': color.value});
+                                  ..add({'name': name, 'email': email, 'role': role, 'status': 'Active', 'phone': phone, 'password': password, 'color': color.value});
                                 AppData.users.value = newUsers;
 
                                 // Add to role-specific store
@@ -545,6 +546,37 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     }
     
     return null; // Valid format
+  }
+
+  // Password validation
+  String? _validatePassword(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Please enter a password.';
+    }
+    
+    final password = value.trim();
+    
+    // Check minimum length (9 characters)
+    if (password.length < 9) {
+      return 'Password must be at least 9 characters long.';
+    }
+    
+    // Check for uppercase letter
+    if (!password.contains(RegExp(r'[A-Z]'))) {
+      return 'Password must contain at least one uppercase letter.';
+    }
+    
+    // Check for lowercase letter
+    if (!password.contains(RegExp(r'[a-z]'))) {
+      return 'Password must contain at least one lowercase letter.';
+    }
+    
+    // Check for special character
+    if (!password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      return 'Password must contain at least one special character.';
+    }
+    
+    return null; // Valid password
   }
 
   void _confirmDelete(Map<String, dynamic> user) {
@@ -635,7 +667,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     String? prefixText,
     int? maxLength,
     String? hintText,
-    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -648,7 +679,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           validator: validator,
           onChanged: onChanged,
           maxLength: maxLength,
-          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             isDense: true,
             filled: true,
@@ -794,7 +824,6 @@ class _EditUserScreenState extends State<_EditUserScreen> {
                 onChanged: (v) => phone = '63+$v',
                 validator: _validatePhilippinePhone,
                 maxLength: 10,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
               const SizedBox(height: 12),
               _dropdownRow(
@@ -877,7 +906,6 @@ class _EditUserScreenState extends State<_EditUserScreen> {
     required ValueChanged<String> onChanged,
     int? maxLength,
     String? hintText,
-    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -890,7 +918,6 @@ class _EditUserScreenState extends State<_EditUserScreen> {
           validator: validator,
           onChanged: onChanged,
           maxLength: maxLength,
-          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -929,5 +956,4 @@ class _EditUserScreenState extends State<_EditUserScreen> {
     );
   }
 }
-
 
