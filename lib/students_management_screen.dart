@@ -249,11 +249,16 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
                   ]),
                 ),
                 const SizedBox(height: 8),
-                Row(children: [
-                  _statChip(Icons.people_alt_rounded, '${_students.length} Total'),
-                  const SizedBox(width: 8),
-                  _statChip(Icons.check_circle_rounded, '${_students.where((t) => t['status'] == 'Active').length} Active'),
-                ])
+                ValueListenableBuilder<List<Map<String, String>>>(
+                  valueListenable: AppData.students,
+                  builder: (context, students, child) {
+                    return Row(children: [
+                      _statChip(Icons.people_alt_rounded, '${students.length} Total'),
+                      const SizedBox(width: 8),
+                      _statChip(Icons.check_circle_rounded, '${students.where((t) => t['status'] == 'Active').length} Active'),
+                    ]);
+                  },
+                )
               ],
             ),
           ),
@@ -281,54 +286,59 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
                   ),
                   const SizedBox(height: 20),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: _students.where((s) {
-                        final q = _searchController.text.trim().toLowerCase();
-                        if (q.isEmpty) return true;
-                        return s['name']!.toLowerCase().contains(q) || s['email']!.toLowerCase().contains(q) || s['grade']!.toLowerCase().contains(q);
-                      }).length,
-                      itemBuilder: (context, index) {
-                        final data = _students.where((s) {
-                          final q = _searchController.text.trim().toLowerCase();
-                          if (q.isEmpty) return true;
-                          return s['name']!.toLowerCase().contains(q) || s['email']!.toLowerCase().contains(q) || s['grade']!.toLowerCase().contains(q);
-                        }).toList();
-                        final student = data[index];
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.green.withOpacity(0.1),
-                              child: const Icon(Icons.school, color: Colors.green),
-                            ),
-                            title: Text(
-                              student['name']!,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(student['email']!),
-                                Text(
-                                  'Grade: ${student['grade']}',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
+                    child: ValueListenableBuilder<List<Map<String, String>>>(
+                      valueListenable: AppData.students,
+                      builder: (context, students, child) {
+                        return ListView.builder(
+                          itemCount: students.where((s) {
+                            final q = _searchController.text.trim().toLowerCase();
+                            if (q.isEmpty) return true;
+                            return s['name']!.toLowerCase().contains(q) || s['email']!.toLowerCase().contains(q) || s['grade']!.toLowerCase().contains(q);
+                          }).length,
+                          itemBuilder: (context, index) {
+                            final data = students.where((s) {
+                              final q = _searchController.text.trim().toLowerCase();
+                              if (q.isEmpty) return true;
+                              return s['name']!.toLowerCase().contains(q) || s['email']!.toLowerCase().contains(q) || s['grade']!.toLowerCase().contains(q);
+                            }).toList();
+                            final student = data[index];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.green.withOpacity(0.1),
+                                  child: const Icon(Icons.school, color: Colors.green),
+                                ),
+                                title: Text(
+                                  student['name']!,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                              ],
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.more_vert_rounded),
-                              onPressed: () => _showStudentActions(student),
-                            ),
-                            onTap: () => _showStudentActions(student),
-                            onLongPress: () {
-                              _showRemoveStudentDialog(_students.indexOf(student));
-                            },
-                          ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(student['email']!),
+                                    Text(
+                                      'Grade: ${student['grade']}',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.more_vert_rounded),
+                                  onPressed: () => _showStudentActions(student),
+                                ),
+                                onTap: () => _showStudentActions(student),
+                                onLongPress: () {
+                                  _showRemoveStudentDialog(students.indexOf(student));
+                                },
+                              ),
+                            );
+                          },
                         );
                       },
                     ),

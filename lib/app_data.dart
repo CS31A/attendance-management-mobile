@@ -50,6 +50,52 @@ class AppData {
     await AppStorage.save();
   }
 
+  static Future<void> updateUser(Map<String, dynamic> updatedUser) async {
+    final email = updatedUser['email']?.toString().toLowerCase();
+    if (email == null) return;
+
+    // Update in users list
+    final newUsers = List<Map<String, dynamic>>.from(users.value);
+    final userIndex = newUsers.indexWhere((u) => (u['email'] ?? '').toLowerCase() == email);
+    if (userIndex != -1) {
+      newUsers[userIndex] = updatedUser;
+      users.value = newUsers;
+    }
+
+    // Update in role-specific lists
+    final role = updatedUser['role']?.toString();
+    final name = updatedUser['name']?.toString();
+    final phone = updatedUser['phone']?.toString();
+
+    if (role == 'Teacher') {
+      final newTeachers = List<Map<String, String>>.from(teachers.value);
+      final teacherIndex = newTeachers.indexWhere((t) => (t['email'] ?? '').toLowerCase() == email);
+      if (teacherIndex != -1) {
+        newTeachers[teacherIndex] = {
+          'name': name ?? '',
+          'email': email,
+          'subject': newTeachers[teacherIndex]['subject'] ?? 'N/A',
+          'status': 'Active',
+        };
+        teachers.value = newTeachers;
+      }
+    } else if (role == 'Student') {
+      final newStudents = List<Map<String, String>>.from(students.value);
+      final studentIndex = newStudents.indexWhere((s) => (s['email'] ?? '').toLowerCase() == email);
+      if (studentIndex != -1) {
+        newStudents[studentIndex] = {
+          'name': name ?? '',
+          'email': email,
+          'grade': newStudents[studentIndex]['grade'] ?? 'Grade',
+          'status': 'Active',
+        };
+        students.value = newStudents;
+      }
+    }
+
+    await AppStorage.save();
+  }
+
   static bool _listEqualsMap(List<Map<String, String>> a, List<Map<String, String>> b) {
     if (identical(a, b)) return true;
     if (a.length != b.length) return false;
@@ -238,6 +284,5 @@ class AppStorage {
     return prefs.getBool(keyLoggedIn) ?? false;
   }
 }
-
 
 

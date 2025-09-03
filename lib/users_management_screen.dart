@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'app_data.dart';
 
 class UsersManagementScreen extends StatefulWidget {
@@ -322,6 +323,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       validator: _validatePhilippinePhone,
                       prefixText: '63+',
                       maxLength: 10,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                     const SizedBox(height: 12),
                     _sheetDropdown(
@@ -344,13 +346,18 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                           child: ElevatedButton(
                             onPressed: () async {
                               if (_editFormKey.currentState!.validate()) {
-                                setState(() {
-                                  user['name'] = name;
-                                  user['email'] = email;
-                                  user['phone'] = phone;
-                                  user['role'] = role;
-                                });
-                                await AppStorage.save();
+                                // Update user data across all lists
+                                final updatedUser = {
+                                  'name': name,
+                                  'email': email,
+                                  'phone': phone,
+                                  'role': role,
+                                  'status': user['status'] ?? 'Active',
+                                  'color': user['color'] ?? Colors.blue.value,
+                                };
+                                
+                                await AppData.updateUser(updatedUser);
+                                setState(() {});
                                 Navigator.pop(ctx);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text('User updated'), backgroundColor: Colors.green),
@@ -432,6 +439,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       validator: _validatePhilippinePhone,
                       prefixText: '63+',
                       maxLength: 10,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                     const SizedBox(height: 12),
                     _sheetDropdown(
@@ -627,6 +635,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     String? prefixText,
     int? maxLength,
     String? hintText,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -639,6 +648,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           validator: validator,
           onChanged: onChanged,
           maxLength: maxLength,
+          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             isDense: true,
             filled: true,
@@ -784,6 +794,7 @@ class _EditUserScreenState extends State<_EditUserScreen> {
                 onChanged: (v) => phone = '63+$v',
                 validator: _validatePhilippinePhone,
                 maxLength: 10,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
               const SizedBox(height: 12),
               _dropdownRow(
@@ -866,6 +877,7 @@ class _EditUserScreenState extends State<_EditUserScreen> {
     required ValueChanged<String> onChanged,
     int? maxLength,
     String? hintText,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -878,6 +890,7 @@ class _EditUserScreenState extends State<_EditUserScreen> {
           validator: validator,
           onChanged: onChanged,
           maxLength: maxLength,
+          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -916,4 +929,5 @@ class _EditUserScreenState extends State<_EditUserScreen> {
     );
   }
 }
+
 
