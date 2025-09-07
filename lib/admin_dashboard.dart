@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'teachers_management_screen.dart';
 import 'students_management_screen.dart';
 import 'users_management_screen.dart';
+import 'user_management_hub.dart';
 import 'app_data.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -63,13 +64,14 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Modern Header with Profile
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color(0xFFF8F9FA),
+    body: SafeArea(
+      child: Column(
+        children: [
+          // Show header only if not on Management tab
+          if (_selectedIndex != 1)
             FadeTransition(
               opacity: _fadeAnimation,
               child: SlideTransition(
@@ -86,84 +88,131 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
             
             // Main Content
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                                         // Welcome Section
-                     FadeTransition(
-                       opacity: _fadeAnimation,
-                       child: SlideTransition(
-                         position: Tween<Offset>(
-                           begin: const Offset(0, 0.3),
-                           end: Offset.zero,
-                         ).animate(CurvedAnimation(
-                           parent: _entranceController,
-                           curve: const Interval(0.2, 0.7, curve: Curves.easeOutCubic),
-                         )),
-                         child: _buildWelcomeSection(),
-                       ),
-                     ),
-                     
-                     const SizedBox(height: 24),
-                     
-                     // Quick Stats Cards
-                     FadeTransition(
-                       opacity: _fadeAnimation,
-                       child: SlideTransition(
-                         position: Tween<Offset>(
-                           begin: const Offset(0, 0.3),
-                           end: Offset.zero,
-                         ).animate(CurvedAnimation(
-                           parent: _entranceController,
-                           curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
-                         )),
-                         child: _buildQuickStats(),
-                       ),
-                     ),
-                     
-                     const SizedBox(height: 24),
-                     
-                     // Management Cards
-                     FadeTransition(
-                       opacity: _fadeAnimation,
-                       child: SlideTransition(
-                         position: Tween<Offset>(
-                           begin: const Offset(0, 0.3),
-                           end: Offset.zero,
-                         ).animate(CurvedAnimation(
-                           parent: _entranceController,
-                           curve: const Interval(0.4, 0.9, curve: Curves.easeOutCubic),
-                         )),
-                         child: _buildManagementCards(),
-                       ),
-                     ),
-                     
-                     const SizedBox(height: 24),
-                     
-                     // People Overview
-                     FadeTransition(
-                       opacity: _fadeAnimation,
-                       child: SlideTransition(
-                         position: Tween<Offset>(
-                           begin: const Offset(0, 0.3),
-                           end: Offset.zero,
-                         ).animate(CurvedAnimation(
-                           parent: _entranceController,
-                           curve: const Interval(0.5, 1.0, curve: Curves.easeOutCubic),
-                         )),
-                         child: _buildPeopleOverview(),
-                       ),
-                     ),
-                  ],
-                ),
-              ),
+              child: _getSelectedContent(),
             ),
           ],
         ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+  Widget _getSelectedContent() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildDashboardContent();
+      case 1:
+        return const UserManagementHub();
+      case 2:
+        return _buildReportsContent();
+      case 3:
+        return _buildClassesContent();
+      default:
+        return _buildDashboardContent();
+    }
+  }
+
+  Widget _buildDashboardContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Welcome Section
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.3),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: _entranceController,
+                curve: const Interval(0.2, 0.7, curve: Curves.easeOutCubic),
+              )),
+              child: _buildWelcomeSection(),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Quick Stats Cards
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.3),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: _entranceController,
+                curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
+              )),
+              child: _buildQuickStats(),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Management Cards
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.3),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: _entranceController,
+                curve: const Interval(0.4, 0.9, curve: Curves.easeOutCubic),
+              )),
+              child: _buildManagementCards(),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // People Overview
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.3),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: _entranceController,
+                curve: const Interval(0.5, 1.0, curve: Curves.easeOutCubic),
+              )),
+              child: _buildPeopleOverview(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReportsContent() {
+    return const Center(
+      child: Text(
+        'Reports\nComing Soon',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClassesContent() {
+    return const Center(
+      child: Text(
+        'Classes\nComing Soon',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey,
+        ),
+      ),
     );
   }
 

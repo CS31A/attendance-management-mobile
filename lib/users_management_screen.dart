@@ -308,8 +308,30 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       onChanged: (v) => email = v,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return 'Please enter an email address.';
+                        final email = v.trim().toLowerCase();
+                        final allowedDomains = [
+                          'gmail.com',
+                          'outlook.com',
+                          'yahoo.com',
+                          'hotmail.com',
+                          'aol.com',
+                          'icloud.com',
+                          'protonmail.com',
+                          'yandex.com',
+                          'mail.com'
+                        ];
+                        
                         final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                        return emailRegex.hasMatch(v.trim()) ? null : 'Please enter a valid email address.';
+                        if (!emailRegex.hasMatch(email)) {
+                          return 'Please enter a valid email address.';
+                        }
+                        
+                        final domain = email.split('@')[1];
+                        if (!allowedDomains.contains(domain)) {
+                          return 'Email must be from an allowed domain (gmail.com, outlook.com, yahoo.com, etc.).';
+                        }
+                        
+                        return null;
                       },
                     ),
                     const SizedBox(height: 12),
@@ -419,8 +441,30 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       onChanged: (v) => email = v,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return 'Please enter an email address.';
+                        final email = v.trim().toLowerCase();
+                        final allowedDomains = [
+                          'gmail.com',
+                          'outlook.com',
+                          'yahoo.com',
+                          'hotmail.com',
+                          'aol.com',
+                          'icloud.com',
+                          'protonmail.com',
+                          'yandex.com',
+                          'mail.com'
+                        ];
+                        
                         final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                        return emailRegex.hasMatch(v.trim()) ? null : 'Please enter a valid email address.';
+                        if (!emailRegex.hasMatch(email)) {
+                          return 'Please enter a valid email address.';
+                        }
+                        
+                        final domain = email.split('@')[1];
+                        if (!allowedDomains.contains(domain)) {
+                          return 'Email must be from an allowed domain (gmail.com, outlook.com, yahoo.com, etc.).';
+                        }
+                        
+                        return null;
                       },
                     ),
                     const SizedBox(height: 12),
@@ -812,8 +856,30 @@ class _EditUserScreenState extends State<_EditUserScreen> {
                 onChanged: (v) => email = v,
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Please enter an email address.';
-                  final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v);
-                  return ok ? null : 'Please enter a valid email address.';
+                  final email = v.trim().toLowerCase();
+                  final allowedDomains = [
+                    'gmail.com',
+                    'outlook.com',
+                    'yahoo.com',
+                    'hotmail.com',
+                    'aol.com',
+                    'icloud.com',
+                    'protonmail.com',
+                    'yandex.com',
+                    'mail.com'
+                  ];
+                  
+                  final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                  if (!emailRegex.hasMatch(email)) {
+                    return 'Please enter a valid email address.';
+                  }
+                  
+                  final domain = email.split('@')[1];
+                  if (!allowedDomains.contains(domain)) {
+                    return 'Email must be from an allowed domain (gmail.com, outlook.com, yahoo.com, etc.).';
+                  }
+                  
+                  return null;
                 },
               ),
               const SizedBox(height: 12),

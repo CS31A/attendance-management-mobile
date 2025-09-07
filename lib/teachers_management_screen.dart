@@ -11,8 +11,22 @@ class TeachersManagementScreen extends StatefulWidget {
 class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
   String? _selectedTeacherToRemove;
   final TextEditingController _searchController = TextEditingController();
+  String _selectedStatusFilter = 'All Status';
+  final List<String> _statusOptions = ['All Status', 'Active', 'Inactive'];
   
   List<Map<String, String>> get _teachers => AppData.teachers.value;
+
+  List<Map<String, String>> get _filteredTeachers {
+    final query = _searchController.text.trim().toLowerCase();
+    return _teachers.where((teacher) {
+      final matchesQuery = query.isEmpty ||
+          teacher['name']!.toLowerCase().contains(query) ||
+          teacher['email']!.toLowerCase().contains(query) ||
+          teacher['subject']!.toLowerCase().contains(query);
+      final matchesStatus = _selectedStatusFilter == 'All Status' || teacher['status'] == _selectedStatusFilter;
+      return matchesQuery && matchesStatus;
+    }).toList();
+  }
 
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -153,9 +167,29 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter email';
                       }
-                      if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value)) {
-                        return 'Please enter valid email';
+                      final email = value.trim().toLowerCase();
+                      final allowedDomains = [
+                        'gmail.com',
+                        'outlook.com',
+                        'yahoo.com',
+                        'hotmail.com',
+                        'aol.com',
+                        'icloud.com',
+                        'protonmail.com',
+                        'yandex.com',
+                        'mail.com'
+                      ];
+                      
+                      final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                      if (!emailRegex.hasMatch(email)) {
+                        return 'Please enter a valid email address.';
                       }
+                      
+                      final domain = email.split('@')[1];
+                      if (!allowedDomains.contains(domain)) {
+                        return 'Email must be from an allowed domain (gmail.com, outlook.com, yahoo.com, etc.).';
+                      }
+                      
                       return null;
                     },
                   ),
@@ -252,6 +286,8 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                   ]),
                 ),
                 const SizedBox(height: 8),
+                _buildStatusFilter(),
+                const SizedBox(height: 8),
                 Row(children: [
                   _statChip(Icons.people_alt_rounded, '${_teachers.length} Total'),
                   const SizedBox(width: 8),
@@ -285,18 +321,9 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                   const SizedBox(height: 20),
                   Expanded(
                     child: ListView.builder(
-                      itemCount: _teachers.where((t) {
-                        final q = _searchController.text.trim().toLowerCase();
-                        if (q.isEmpty) return true;
-                        return t['name']!.toLowerCase().contains(q) || t['email']!.toLowerCase().contains(q) || t['subject']!.toLowerCase().contains(q);
-                      }).length,
+                      itemCount: _filteredTeachers.length,
                       itemBuilder: (context, index) {
-                        final data = _teachers.where((t) {
-                          final q = _searchController.text.trim().toLowerCase();
-                          if (q.isEmpty) return true;
-                          return t['name']!.toLowerCase().contains(q) || t['email']!.toLowerCase().contains(q) || t['subject']!.toLowerCase().contains(q);
-                        }).toList();
-                        final teacher = data[index];
+                        final teacher = _filteredTeachers[index];
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
                           child: ListTile(
@@ -392,6 +419,27 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
           const SizedBox(width: 6),
           Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatusFilter() {
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE4E7EC)),
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedStatusFilter,
+          isExpanded: true,
+          icon: const Icon(Icons.arrow_drop_down),
+          items: _statusOptions.map((status) => DropdownMenuItem(value: status, child: Text(status))).toList(),
+          onChanged: (val) => setState(() => _selectedStatusFilter = val ?? 'All Status'),
+        ),
       ),
     );
   }
