@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'app_data.dart';
+import '../services/app_data.dart';
 
 class UsersManagementScreen extends StatefulWidget {
   const UsersManagementScreen({super.key});
@@ -108,8 +108,8 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             ),
           ),
           const SizedBox(height: 12),
-                  Row(
-                    children: [
+          Row(
+            children: [
               Expanded(child: _buildRoleDropdown()),
             ],
           ),
@@ -139,52 +139,28 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     );
   }
 
-  Widget _buildOutlinedPill({required IconData icon, required String label, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        height: 36,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFE4E7EC)),
-          borderRadius: BorderRadius.circular(20),
-          color: Colors.white,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18, color: const Color(0xFF344054)),
-            const SizedBox(width: 6),
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildUserTile(Map<String, dynamic> user) {
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 12),
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 0,
       color: Colors.white,
-                          child: ListTile(
-                            leading: CircleAvatar(
+      child: ListTile(
+        leading: CircleAvatar(
           backgroundColor: _colorFrom(user['color']).withOpacity(0.12),
           backgroundImage: NetworkImage(_avatarFromName(user['name'])),
           child: Icon(Icons.person, color: _colorFrom(user['color'])),
         ),
         title: Row(
-                              children: [
+          children: [
             Expanded(
-                                  child: Text(
+              child: Text(
                 user['name'],
                 style: const TextStyle(fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                              ],
-                            ),
+              ),
+            ),
+          ],
+        ),
         subtitle: Text(user['role']),
         trailing: IconButton(
           icon: const Icon(Icons.more_vert_rounded),
@@ -295,8 +271,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       onChanged: (v) => name = v,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return 'Please enter a name.';
-                        // Letters, spaces and common separators only; disallow digits
-                        final valid = RegExp(r"^[A-Za-z .'-]+").hasMatch(v.trim()) && !RegExp(r"\\d").hasMatch(v);
+                        final valid = RegExp(r"^[A-Za-z .'-]+$").hasMatch(v.trim());
                         return valid ? null : 'Name cannot contain numbers.';
                       },
                     ),
@@ -320,17 +295,14 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                           'yandex.com',
                           'mail.com'
                         ];
-                        
                         final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
                         if (!emailRegex.hasMatch(email)) {
                           return 'Please enter a valid email address.';
                         }
-                        
                         final domain = email.split('@')[1];
                         if (!allowedDomains.contains(domain)) {
                           return 'Email must be from an allowed domain (gmail.com, outlook.com, yahoo.com, etc.).';
                         }
-                        
                         return null;
                       },
                     ),
@@ -453,17 +425,14 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                           'yandex.com',
                           'mail.com'
                         ];
-                        
                         final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
                         if (!emailRegex.hasMatch(email)) {
                           return 'Please enter a valid email address.';
                         }
-                        
                         final domain = email.split('@')[1];
                         if (!allowedDomains.contains(domain)) {
                           return 'Email must be from an allowed domain (gmail.com, outlook.com, yahoo.com, etc.).';
                         }
-                        
                         return null;
                       },
                     ),
@@ -508,12 +477,10 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                             onPressed: () async {
                               if (_createFormKey.currentState!.validate()) {
                                 final color = _roleColor(role);
-                                // Add to Users store
                                 final newUsers = List<Map<String, dynamic>>.from(AppData.users.value)
                                   ..add({'name': name, 'email': email, 'role': role, 'status': 'Active', 'phone': phone, 'password': password, 'color': color.value});
                                 AppData.users.value = newUsers;
 
-                                // Add to role-specific store
                                 if (role == 'Teacher') {
                                   await AppData.addTeacher({'name': name, 'email': email, 'subject': 'N/A', 'status': 'Active'});
                                 } else if (role == 'Student') {
@@ -561,66 +528,42 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     return parsed != null ? Color(parsed) : Colors.blue;
   }
 
-  // Philippine mobile number validation
   String? _validatePhilippinePhone(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Please enter a phone number.';
     }
-    
     final cleanValue = value.trim();
-    
-    // The input field only contains digits (without 63+ prefix)
-    // because prefixText is just visual and onChanged adds 63+ to the stored value
     final digits = cleanValue.replaceAll(RegExp(r'[^0-9]'), '');
-    
-    // Check if contains any non-numeric characters
     if (cleanValue.contains(RegExp(r'[^0-9]'))) {
       return 'Phone number can only contain numbers.';
     }
-    
-    // Check if too short (less than 10 digits)
-    // Note: maxLength prevents exceeding 10 digits, so we only check minimum
     if (digits.length < 10) {
       return 'Phone number must be 10 digits after 63+ (total 11 digits).';
     }
-    
-    // Check if the number is valid (not all zeros, etc.)
     if (digits == '0000000000') {
       return 'Please enter a valid phone number.';
     }
-    
-    return null; // Valid format
+    return null;
   }
 
-  // Password validation
   String? _validatePassword(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Please enter a password.';
     }
-    
     final password = value.trim();
-    
-    // Check minimum length (9 characters)
     if (password.length < 9) {
       return 'Password must be at least 9 characters long.';
     }
-    
-    // Check for uppercase letter
     if (!password.contains(RegExp(r'[A-Z]'))) {
       return 'Password must contain at least one uppercase letter.';
     }
-    
-    // Check for lowercase letter
     if (!password.contains(RegExp(r'[a-z]'))) {
       return 'Password must contain at least one lowercase letter.';
     }
-    
-    // Check for special character
     if (!password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
       return 'Password must contain at least one special character.';
     }
-    
-    return null; // Valid password
+    return null;
   }
 
   void _confirmDelete(Map<String, dynamic> user) {
@@ -629,15 +572,15 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Delete user'),
         content: Text('Are you sure you want to delete ${user['name']}?'),
-          actions: [
+        actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            ElevatedButton(
+          ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-              onPressed: () async {
+            onPressed: () async {
               await AppData.deleteByEmail(user['email']);
               setState(() {});
               Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
+              ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('User deleted'), backgroundColor: Colors.red),
               );
             },
@@ -648,60 +591,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     );
   }
 
-  Widget _buildLabeledField({
-    required String label,
-    required String initialValue,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-    required ValueChanged<String> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 6),
-        TextFormField(
-          initialValue: initialValue,
-          keyboardType: keyboardType,
-          validator: validator,
-          onChanged: onChanged,
-          decoration: InputDecoration(
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDropdownRow({
-    required String label,
-    required String value,
-    required List<String> items,
-    required ValueChanged<String> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          value: value,
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-          onChanged: (v) => onChanged(v ?? value),
-          decoration: InputDecoration(
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          validator: (v) => (v == null || v.isEmpty) ? 'Please select a ${label.toLowerCase()}.' : null,
-        ),
-      ],
-    );
-  }
-
-  // Bottom-sheet styled field and dropdown to match the screenshot
   Widget _sheetTextField({
     required String label,
     required String initialValue,
@@ -729,7 +618,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             fillColor: Colors.white,
             prefixText: prefixText,
             hintText: hintText,
-            counterText: '', // Hide character counter
+            counterText: '',
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -790,236 +679,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
 
   String _avatarFromName(String name) {
     final seed = name.hashCode % 10;
-    // Use DiceBear avatars for quick placeholders
     return 'https://api.dicebear.com/7.x/initials/png?seed=$seed&backgroundType=gradientLinear&fontFamily=Inter&chars=2';
   }
-
 }
-
-class _EditUserScreen extends StatefulWidget {
-  final Map<String, dynamic> user;
-  final ValueChanged<Map<String, dynamic>> onSave;
-  const _EditUserScreen({required this.user, required this.onSave});
-
-  @override
-  State<_EditUserScreen> createState() => _EditUserScreenState();
-}
-
-class _EditUserScreenState extends State<_EditUserScreen> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  late String name;
-  late String email;
-  late String phone;
-  late String role;
-
-  @override
-  void initState() {
-    super.initState();
-    name = widget.user['name'];
-    email = widget.user['email'];
-    phone = widget.user['phone'];
-    role = widget.user['role'];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit User'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      backgroundColor: const Color(0xFFF5F6F8),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              _labeledField(
-                label: 'Name',
-                initialValue: name,
-                onChanged: (v) => name = v,
-                validator: (v) => v == null || v.isEmpty ? 'Please enter a name.' : null,
-              ),
-              const SizedBox(height: 12),
-              _labeledField(
-                label: 'Email',
-                initialValue: email,
-                keyboardType: TextInputType.emailAddress,
-                onChanged: (v) => email = v,
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Please enter an email address.';
-                  final email = v.trim().toLowerCase();
-                  final allowedDomains = [
-                    'gmail.com',
-                    'outlook.com',
-                    'yahoo.com',
-                    'hotmail.com',
-                    'aol.com',
-                    'icloud.com',
-                    'protonmail.com',
-                    'yandex.com',
-                    'mail.com'
-                  ];
-                  
-                  final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                  if (!emailRegex.hasMatch(email)) {
-                    return 'Please enter a valid email address.';
-                  }
-                  
-                  final domain = email.split('@')[1];
-                  if (!allowedDomains.contains(domain)) {
-                    return 'Email must be from an allowed domain (gmail.com, outlook.com, yahoo.com, etc.).';
-                  }
-                  
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              _labeledField(
-                label: 'Phone Number',
-                initialValue: phone.startsWith('63+') ? phone.substring(3) : phone,
-                keyboardType: TextInputType.phone,
-                onChanged: (v) => phone = '63+$v',
-                validator: _validatePhilippinePhone,
-                maxLength: 10,
-              ),
-              const SizedBox(height: 12),
-              _dropdownRow(
-                label: 'Role',
-                value: role,
-                items: const ['Admin', 'Teacher', 'Student'],
-                onChanged: (v) => role = v,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          widget.onSave({
-                            'name': name,
-                            'email': email,
-                            'phone': phone,
-                            'role': role,
-                          });
-                          Navigator.pop(context);
-                        }
-                      },
-                      child: const Text('Save Changes'),
-                    ),
-                  ),
-                ],
-              )
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Philippine mobile number validation
-  String? _validatePhilippinePhone(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Please enter a phone number.';
-    }
-    
-    final cleanValue = value.trim();
-    
-    // The input field only contains digits (without 63+ prefix)
-    // because prefixText is just visual and onChanged adds 63+ to the stored value
-    final digits = cleanValue.replaceAll(RegExp(r'[^0-9]'), '');
-    
-    // Check if contains any non-numeric characters
-    if (cleanValue.contains(RegExp(r'[^0-9]'))) {
-      return 'Phone number can only contain numbers.';
-    }
-    
-    // Check if too short (less than 10 digits)
-    // Note: maxLength prevents exceeding 10 digits, so we only check minimum
-    if (digits.length < 10) {
-      return 'Phone number must be 10 digits after 63+ (total 11 digits).';
-    }
-    
-    // Check if the number is valid (not all zeros, etc.)
-    if (digits == '0000000000') {
-      return 'Please enter a valid phone number.';
-    }
-    
-    return null; // Valid format
-  }
-
-  Widget _labeledField({
-    required String label,
-    required String initialValue,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-    required ValueChanged<String> onChanged,
-    int? maxLength,
-    String? hintText,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        TextFormField(
-          initialValue: initialValue,
-          keyboardType: keyboardType,
-          validator: validator,
-          onChanged: onChanged,
-          maxLength: maxLength,
-          decoration: InputDecoration(
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            hintText: hintText,
-            counterText: '', // Hide character counter
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _dropdownRow({
-    required String label,
-    required String value,
-    required List<String> items,
-    required ValueChanged<String> onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          value: value,
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-          onChanged: (v) => onChanged(v ?? value),
-          decoration: InputDecoration(
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          validator: (v) => (v == null || v.isEmpty) ? 'Please select a ${label.toLowerCase()}.' : null,
-        ),
-      ],
-    );
-  }
-}
-

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'forgot_password_screen.dart';
-import 'admin_dashboard.dart';
-import 'app_data.dart'
-;
+import 'screens/forgot_password_screen.dart';
+import 'screens/admin_dashboard.dart';
+import 'services/app_data.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -55,8 +54,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
-    // Start form animation
     _formAnimationController.forward();
   }
 
@@ -71,30 +68,22 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      // Trigger button animation
       _buttonAnimationController.forward().then((_) {
         _buttonAnimationController.reverse();
       });
-      
-      // Hard-coded credentials
       const String hardcodedUsername = 'admin';
       const String hardcodedPassword = 'password123';
-      
       String username = _usernameController.text.trim();
       String password = _passwordController.text.trim();
-      
       if (username == hardcodedUsername && password == hardcodedPassword) {
-        // Successful login
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Login successful!'),
             backgroundColor: Colors.green,
           ),
         );
-        // Clear the form
         _usernameController.clear();
         _passwordController.clear();
-        // Navigate to admin dashboard with custom transition and persist session
         AppStorage.setLoggedIn(true);
         Navigator.pushReplacement(
           context,
@@ -104,17 +93,14 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               const begin = Offset(1.0, 0.0);
               const end = Offset.zero;
               const curve = Curves.easeInOutCubic;
-              
               var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
               var offsetAnimation = animation.drive(tween);
-              
               return SlideTransition(position: offsetAnimation, child: child);
             },
             transitionDuration: const Duration(milliseconds: 800),
           ),
         );
       } else {
-        // Failed login
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Invalid username or password'),
@@ -137,7 +123,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               key: _formKey,
               child: Column(
                 children: [
-                  // Logo with animation
                   FadeTransition(
                     opacity: _formAnimationController,
                     child: SlideTransition(
@@ -167,10 +152,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16),
                           child: Image.asset(
-                            'assets/acla logo.png', // Your logo filename with space
+                            'assets/acla logo.png',
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              // Fallback to custom logo if image fails to load
                               return Container(
                                 color: Colors.red,
                                 child: CustomPaint(
@@ -183,7 +167,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                       ),
                     ),
                   ),
-
                   FadeTransition(
                     opacity: _formAnimationController,
                     child: SlideTransition(
@@ -205,10 +188,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 48),
-
-                  // Username with animation
                   FadeTransition(
                     opacity: _formAnimationController,
                     child: SlideTransition(
@@ -227,10 +207,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Password with animation
                   FadeTransition(
                     opacity: _formAnimationController,
                     child: SlideTransition(
@@ -262,10 +239,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 32),
-
-                  // Animated Login button
                   FadeTransition(
                     opacity: _formAnimationController,
                     child: SlideTransition(
@@ -301,9 +275,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
                   TextButton(
                     onPressed: () {
                       Navigator.push(
@@ -374,7 +346,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   }
 }
 
-// Optional: Your original logo painter
 class LogoPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
