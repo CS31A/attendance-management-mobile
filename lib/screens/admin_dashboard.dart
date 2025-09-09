@@ -4,6 +4,7 @@ import 'students_management_screen.dart';
 import 'users_management_screen.dart';
 import 'user_management_hub.dart';
 import '../services/app_data.dart';
+import 'reports_screen.dart';
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
 
@@ -188,19 +189,9 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     }
 
     Widget _buildReportsContent() {
-      return const Center(
-        child: Text(
-          'Reports\nComing Soon',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey,
-          ),
-        ),
-      );
-    }
-
+  return const ReportsScreen();
+}
+  
     Widget _buildClassesContent() {
       return const Center(
         child: Text(
