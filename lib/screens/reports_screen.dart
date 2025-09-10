@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class ReportsTheme {
-  static const Color primaryColor = Color(0xFF3498DB);
   static const Color cardColor = Colors.white;
   static const Color chartLineColor = Color(0xFF5D9CEC);
   static const Color chartBarColor = Color(0xFF5D9CEC);
@@ -25,20 +24,26 @@ class ReportsScreen extends StatelessWidget {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: ReportsTheme.primaryColor,
+        backgroundColor: Colors.grey[100], // Neutral background
         body: Column(
           children: [
-            const SizedBox(height: 32), // Status bar spacing
-            const TabBar(
-              indicatorColor: Colors.white,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              tabs: [
-                Tab(text: 'Daily'),
-                Tab(text: 'Week'),
-                Tab(text: 'Monthly'),
-              ],
-            ),
+            
+            //const SizedBox(height: 12), // Small spacing only
+            // Clean white tab bar
+            //Material(
+              //color: Colors.white,
+              //elevation: 2,
+              //child: const TabBar(
+               // indicatorColor: Colors.blue,
+                //labelColor: Colors.blue,
+                //unselectedLabelColor: Colors.black54,
+                //tabs: [
+                //  Tab(text: 'Daily'),
+                //  Tab(text: 'Week'),
+                 // Tab(text: 'Monthly'),
+              //  ],
+              //),
+            //),
             Expanded(
               child: TabBarView(
                 children: [
@@ -95,8 +100,10 @@ class ReportsScreen extends StatelessWidget {
               const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
               return Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(months[value.toInt() % months.length],
-                    style: const TextStyle(fontSize: 10)),
+                child: Text(
+                  months[value.toInt() % months.length],
+                  style: const TextStyle(fontSize: 10),
+                ),
               );
             },
             interval: 1,
@@ -148,8 +155,10 @@ class ReportsScreen extends StatelessWidget {
             showTitles: true,
             getTitlesWidget: (value, _) => Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text(labels[value.toInt()],
-                  style: const TextStyle(fontSize: 10)),
+              child: Text(
+                labels[value.toInt()],
+                style: const TextStyle(fontSize: 10),
+              ),
             ),
           ),
         ),

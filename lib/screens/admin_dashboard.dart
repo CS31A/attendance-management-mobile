@@ -70,21 +70,22 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       body: SafeArea(
         child: Column(
           children: [
+
             // Show header only if not on Management tab
-            if (_selectedIndex != 1)
-              FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, -0.5),
-                    end: Offset.zero,
-                  ).animate(CurvedAnimation(
-                    parent: _entranceController,
-                    curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
-                  )),
-                  child: _buildHeader(),
-                ),
-              ),
+            //if (_selectedIndex != 1)
+             // FadeTransition(
+                //opacity: _fadeAnimation,
+                //child: SlideTransition(
+                  //position: Tween<Offset>(
+                //    begin: const Offset(0, -0.5),
+                   // end: Offset.zero,
+                 // ).animate(CurvedAnimation(
+                    //parent: _entranceController,
+                   // curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
+                  //)),
+                  //child: _buildHeader(),
+                //),
+             //),
               
               // Main Content
               Expanded(
