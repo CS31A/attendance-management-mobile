@@ -13,7 +13,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   final GlobalKey<FormState> _editFormKey = GlobalKey<FormState>();
   final GlobalKey<FormState> _createFormKey = GlobalKey<FormState>();
 
-  String _selectedFilter = 'All';
   String _selectedRoleFilter = 'All Roles';
   final List<String> _roles = ['All Roles', 'Admin', 'Teacher', 'Student'];
 
@@ -61,18 +60,27 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
         children: [
           _buildSearchAndFilters(context),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _visibleUsers.length,
-              itemBuilder: (context, index) {
-                final user = _visibleUsers[index];
-                return _buildUserTile(user);
-              },
-            ),
+            child: _visibleUsers.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No users found',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 16,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: _visibleUsers.length,
+                    itemBuilder: (context, index) {
+                      final user = _visibleUsers[index];
+                      return _buildUserTile(user);
+                    },
+                  ),
           ),
         ],
       ),
-      bottomNavigationBar: null,
     );
   }
 

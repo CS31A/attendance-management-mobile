@@ -89,7 +89,8 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       case 0:
         return _buildDashboardContent();
       case 1:
-        return const UserManagementHub();
+        // Changed this line to show the actual users management screen
+        return const UsersManagementScreen();
       case 2:
         return _buildReportsContent();
       case 3:
