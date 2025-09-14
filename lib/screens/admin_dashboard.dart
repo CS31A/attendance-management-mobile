@@ -6,6 +6,8 @@ import 'users_management_screen.dart';
 import 'user_management_hub.dart';
 import '../services/app_data.dart';
 import 'reports_screen.dart';
+// Fix: Use consistent import name
+import 'admin_settings_screen.dart'; // Make sure this file exists
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -89,12 +91,11 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       case 0:
         return _buildDashboardContent();
       case 1:
-        // Changed this line to show the actual users management screen
         return const UsersManagementScreen();
       case 2:
         return _buildReportsContent();
       case 3:
-        return _buildClassesContent();
+        return const AdminSettingsScreen();
       default:
         return _buildDashboardContent();
     }
