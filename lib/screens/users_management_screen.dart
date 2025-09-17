@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../services/app_data.dart';
 
 class UsersManagementScreen extends StatefulWidget {
-  const UsersManagementScreen({super.key});
+  final VoidCallback? onBackPressed;
+  
+  const UsersManagementScreen({super.key, this.onBackPressed});
 
   @override
   State<UsersManagementScreen> createState() => _UsersManagementScreenState();
@@ -47,7 +49,13 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (widget.onBackPressed != null) {
+              widget.onBackPressed!();
+            } else {
+              Navigator.of(context).pop();
+            }
+          },
         ),
         actions: [
           IconButton(

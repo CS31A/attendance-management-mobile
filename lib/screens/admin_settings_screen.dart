@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
-  const AdminSettingsScreen({super.key});
+  final VoidCallback? onBackPressed;
+  
+  const AdminSettingsScreen({super.key, this.onBackPressed});
 
   @override
   State<AdminSettingsScreen> createState() => _AdminSettingsScreenState();
@@ -25,6 +27,16 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.black87,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (widget.onBackPressed != null) {
+              widget.onBackPressed!();
+            } else {
+              Navigator.pop(context);
+            }
+          },
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

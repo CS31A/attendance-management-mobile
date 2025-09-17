@@ -23,8 +23,10 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
   
   late AnimationController _entranceController;
   late AnimationController _cardAnimationController;
+  late AnimationController _navigationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  late Animation<Offset> _navigationSlideAnimation;
 
   @override
   void initState() {
@@ -35,6 +37,10 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     );
     _cardAnimationController = AnimationController(
       duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _navigationController = AnimationController(
+      duration: const Duration(milliseconds: 400),
       vsync: this,
     );
     
@@ -54,8 +60,17 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       curve: Curves.easeOutCubic,
     ));
     
+    _navigationSlideAnimation = Tween<Offset>(
+      begin: const Offset(1.0, 0.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _navigationController,
+      curve: Curves.easeInOutCubic,
+    ));
+    
     // Start animations
     _entranceController.forward();
+    _navigationController.forward(); // Initialize navigation animation at end position
     Future.delayed(const Duration(milliseconds: 300), () {
       _cardAnimationController.forward();
     });
@@ -65,7 +80,16 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
   void dispose() {
     _entranceController.dispose();
     _cardAnimationController.dispose();
+    _navigationController.dispose();
     super.dispose();
+  }
+
+  void _navigateToDashboard() {
+    _navigationController.reset();
+    setState(() {
+      _selectedIndex = 0;
+    });
+    _navigationController.forward();
   }
 
   @override
@@ -77,7 +101,10 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
           children: [
             // Main Content
             Expanded(
-              child: _getSelectedContent(),
+              child: SlideTransition(
+                position: _navigationSlideAnimation,
+                child: _getSelectedContent(),
+              ),
             ),
           ],
         ),
@@ -91,11 +118,17 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       case 0:
         return _buildDashboardContent();
       case 1:
-        return const UsersManagementScreen();
+        return UsersManagementScreen(
+          onBackPressed: _navigateToDashboard,
+        );
       case 2:
-        return _buildReportsContent();
+        return ReportsScreen(
+          onBackPressed: _navigateToDashboard,
+        );
       case 3:
-        return const AdminSettingsScreen();
+        return AdminSettingsScreen(
+          onBackPressed: _navigateToDashboard,
+        );
       default:
         return _buildDashboardContent();
     }
@@ -392,7 +425,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                     ),
                   ),
                   Row(
-                    children: ['Monthly', 'Weekly', 'Today'].map((period) {
+                    children: ['Today', 'Weeks', 'Months'].map((period) {
                       return GestureDetector(
                         onTap: () {
                           setState(() {
