@@ -1,15 +1,31 @@
 import 'package:flutter/material.dart';
 import 'users_management_screen.dart';
+import 'teachers_management_screen.dart';
+import 'students_management_screen.dart';
 
-class UserManagementHub extends StatelessWidget {
+class UserManagementHub extends StatefulWidget {
   const UserManagementHub({super.key});
+
+  @override
+  State<UserManagementHub> createState() => _UserManagementHubState();
+}
+
+class _UserManagementHubState extends State<UserManagementHub> {
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedFilter = 'All Roles';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8),
       appBar: AppBar(
-        title: const Text('User Management'),
+        title: const Text('Management'),
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
@@ -19,54 +35,86 @@ class UserManagementHub extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            _SectionHeader(title: 'User Profiles'),
-            const SizedBox(height: 8),
-            _FeatureCard(
-              icon: Icons.account_circle_outlined,
-              title: 'Profiles',
-              subtitle: 'Manage user profiles and information',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const UsersManagementScreen()),
-                );
-              },
+      body: Column(
+        children: [
+          // Search and Filter Section
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Column(
+              children: [
+                Container(
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF2F4F7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.search_rounded, color: Color(0xFF667085)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (_) => setState(() {}),
+                          decoration: const InputDecoration(
+                            hintText: 'Search users...',
+                            isCollapsed: true,
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildFilterDropdown(),
+              ],
             ),
-            const SizedBox(height: 16),
-            _SectionHeader(title: 'Roles & Permissions'),
-            const SizedBox(height: 8),
-            _FeatureCard(
-              icon: Icons.workspaces_outline,
-              title: 'Roles',
-              subtitle: 'Manage user roles and access levels',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const UsersManagementScreen()),
-                );
-              },
+          ),
+          
+          // Empty content area (like Users screen)
+          Expanded(
+            child: Container(
+              color: Colors.white,
+              child: const Center(
+                child: Text(
+                  'No users found',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 12),
-            _FeatureCard(
-              icon: Icons.lock_outline,
-              title: 'Permissions',
-              subtitle: 'Manage permissions for each role',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const UsersManagementScreen()),
-                );
-              },
-            ),
-            const Spacer(),
-            _BottomNavPlaceholder(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterDropdown() {
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFFE4E7EC)),
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedFilter,
+          isExpanded: true,
+          icon: const Icon(Icons.arrow_drop_down),
+          items: const [
+            DropdownMenuItem(value: 'All Roles', child: Text('All Roles')),
+            DropdownMenuItem(value: 'Admin', child: Text('Admin')),
+            DropdownMenuItem(value: 'Teacher', child: Text('Teacher')),
+            DropdownMenuItem(value: 'Student', child: Text('Student')),
           ],
+          onChanged: (val) => setState(() => _selectedFilter = val ?? 'All Roles'),
         ),
       ),
     );
