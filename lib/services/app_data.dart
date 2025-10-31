@@ -48,7 +48,7 @@ class AppData {
 
     await AppStorage.save();
   }
-
+  
   static Future<void> updateUser(Map<String, dynamic> updatedUser) async {
     final email = updatedUser['email']?.toString().toLowerCase();
     if (email == null) return;

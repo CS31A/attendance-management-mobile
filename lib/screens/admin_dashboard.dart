@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'teachers_management_screen.dart';
@@ -6,8 +8,9 @@ import 'users_management_screen.dart';
 import 'user_management_hub.dart';
 import '../services/app_data.dart';
 import 'reports_screen.dart';
-// Fix: Use consistent import name
-import 'admin_settings_screen.dart'; // Make sure this file exists
+import 'admin_settings_screen.dart';
+import 'profile_edit_screen.dart';
+import '../models/user.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -22,28 +25,27 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
   String _selectedPeriod = 'Monthly';
   
   late AnimationController _entranceController;
-  late AnimationController _cardAnimationController;
   late AnimationController _navigationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  late Animation<Offset> _navigationSlideAnimation;
 
   @override
   void initState() {
     super.initState();
+    
+    // Initialize entrance animation controller
     _entranceController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
       vsync: this,
-    );
-    _cardAnimationController = AnimationController(
       duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _navigationController = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
     );
     
+    // Initialize navigation animation controller
+    _navigationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    
+    // Setup fade animation
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -52,61 +54,68 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       curve: Curves.easeOut,
     ));
     
+    // Setup slide animation
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
+      begin: const Offset(0.0, 0.1),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _entranceController,
-      curve: Curves.easeOutCubic,
+      curve: Curves.easeOut,
     ));
     
-    _navigationSlideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _navigationController,
-      curve: Curves.easeInOutCubic,
-    ));
-    
-    // Start animations
+    // Start entrance animation
     _entranceController.forward();
-    _navigationController.forward(); // Initialize navigation animation at end position
-    Future.delayed(const Duration(milliseconds: 300), () {
-      _cardAnimationController.forward();
-    });
   }
 
   @override
   void dispose() {
     _entranceController.dispose();
-    _cardAnimationController.dispose();
     _navigationController.dispose();
     super.dispose();
   }
 
   void _navigateToDashboard() {
-    _navigationController.reset();
     setState(() {
       _selectedIndex = 0;
     });
+    
+    // Reset and play navigation animation
+    _navigationController.reset();
     _navigationController.forward();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Main Content
-            Expanded(
-              child: SlideTransition(
-                position: _navigationSlideAnimation,
-                child: _getSelectedContent(),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF1E3A8A),
+              Color(0xFF3B82F6),
+              Color(0xFF60A5FA),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Main Content
+              Expanded(
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: _getSelectedContent(),
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -126,8 +135,13 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
           onBackPressed: _navigateToDashboard,
         );
       case 3:
-        return AdminSettingsScreen(
-          onBackPressed: _navigateToDashboard,
+        return ProfileEditScreen(
+          user: User(
+            id: '1',
+            name: 'Admin User',
+            email: 'admin@example.com',
+            role: 'admin',
+          ),
         );
       default:
         return _buildDashboardContent();
@@ -143,7 +157,12 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
           // Header with profile
           _buildModernHeader(),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          
+          // Notification Card
+          _buildNotificationCard(),
+          
+          const SizedBox(height: 16),
           
           // Stats Grid (2x2) - Updated with management items
           _buildStatsGrid(),
@@ -163,13 +182,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, -0.3),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _entranceController,
-          curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
-        )),
+        position: _slideAnimation,
         child: Row(
           children: [
             Expanded(
@@ -181,7 +194,14 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black26,
+                          offset: Offset(0, 2),
+                          blurRadius: 4,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -189,22 +209,42 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                     'Welcome back, Christian Dave',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey[600],
+                      color: Colors.white.withOpacity(0.9),
                     ),
                   ),
                 ],
               ),
             ),
-            // Profile Avatar
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.blue.withOpacity(0.3), width: 2),
-                image: const DecorationImage(
-                  image: NetworkImage('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'),
-                  fit: BoxFit.cover,
+            // Profile Avatar - Made Clickable
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfileEditScreen(
+                      user: User(
+                        id: '1',
+                        name: 'Admin User',
+                        email: 'admin@example.com',
+                        role: 'admin',
+                      ),
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.5),
+                    width: 2,
+                  ),
+                  image: const DecorationImage(
+                    image: NetworkImage('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
@@ -218,13 +258,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.3),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _entranceController,
-          curve: const Interval(0.2, 0.7, curve: Curves.easeOutCubic),
-        )),
+        position: _slideAnimation,
         child: GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
@@ -243,57 +277,45 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
               isHighlighted: true,
               onTap: null, // Not clickable - display only
             ),
-            // Total Students (clickable)
-            _buildModernStatCard(
-              title: 'Total Students',
-              value: '1,247',
-              progress: 0.3,
-              color: Colors.green,
-              bgColor: Colors.white,
-              isHighlighted: false,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const StudentsManagementScreen(),
-                  ),
-                );
-              },
-            ),
-            // Total Teachers (clickable)
-            _buildModernStatCard(
-              title: 'Total Teachers',
-              value: '89',
-              progress: 0.7,
-              color: Colors.orange,
-              bgColor: Colors.white,
-              isHighlighted: false,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const TeachersManagementScreen(),
-                  ),
-                );
-              },
-            ),
-            // User Management (clickable)
-            _buildModernStatCard(
-              title: 'User Management',
-              value: '1,336',
-              progress: 0.7,
-              color: Colors.purple,
-              bgColor: Colors.white,
-              isHighlighted: false,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const UsersManagementScreen(),
-                  ),
-                );
-              },
-            ),
+          // Total Students (clickable)
+          _buildModernStatCard(
+            title: 'Total Students',
+            value: '1,247',
+            progress: 0.3,
+            color: Colors.green,
+            bgColor: Colors.white,
+            isHighlighted: false,
+            onTap: () {
+              // Navigation disabled for now
+              ;
+            },
+          ),
+          // Total Teachers (clickable)
+          _buildModernStatCard(
+            title: 'Total Teachers',
+            value: '89',
+            progress: 0.7,
+            color: Colors.orange,
+            bgColor: Colors.white,
+            isHighlighted: false,
+            onTap: () {
+              // Navigation disabled for now
+              ;
+            },
+          ),
+          // User Management (clickable)
+          _buildModernStatCard(
+            title: 'User Management',
+            value: '1,336',
+            progress: 0.7,
+            color: Colors.purple,
+            bgColor: Colors.white,
+            isHighlighted: false,
+            onTap: () {
+              // Navigation disabled for now
+              ;
+            },
+          ),
           ],
         ),
       ),
@@ -311,75 +333,83 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: isHighlighted ? Colors.white : Colors.black87,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(isHighlighted ? 0.3 : 0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1.5,
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                color: isHighlighted ? Colors.white70 : Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const Spacer(),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isHighlighted 
-                          ? Colors.white.withOpacity(0.3)
-                          : Colors.grey.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: progress,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isHighlighted ? Colors.white : color,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${(progress * 100).toInt()}%',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isHighlighted ? Colors.white70 : Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
-          ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.9),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const Spacer(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: progress,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${(progress * 100).toInt()}%',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.9),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -389,177 +419,234 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.3),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _entranceController,
-          curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
-        )),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Performance',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  Row(
-                    children: ['Today', 'Weeks', 'Months'].map((period) {
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedPeriod = period;
-                          });
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(left: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: _selectedPeriod == period 
-                                ? Colors.blue 
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            period,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: _selectedPeriod == period 
-                                  ? Colors.white 
-                                  : Colors.grey[600],
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+        position: _slideAnimation,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 200,
-                child: LineChart(
-                  LineChartData(
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      horizontalInterval: 10,
-                      getDrawingHorizontalLine: (value) {
-                        return FlLine(
-                          color: Colors.grey.withOpacity(0.2),
-                          strokeWidth: 1,
-                        );
-                      },
-                    ),
-                    titlesData: FlTitlesData(
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 40,
-                          getTitlesWidget: (value, meta) {
-                            return Text(
-                              value.toInt().toString(),
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
-                              ),
-                            );
-                          },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Attendance Overview',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            const titles = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-                            if (value.toInt() >= 0 && value.toInt() < titles.length) {
-                              return Text(
-                                titles[value.toInt()],
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
-                              );
-                            }
-                            return const Text('');
-                          },
-                        ),
-                      ),
-                    ),
-                    borderData: FlBorderData(show: false),
-                    minX: 0,
-                    maxX: 6,
-                    minY: 0,
-                    maxY: 60,
-                    lineBarsData: [
-                      // Pink line (lighter)
-                      LineChartBarData(
-                        spots: [
-                          const FlSpot(0, 30),
-                          const FlSpot(1, 45),
-                          const FlSpot(2, 35),
-                          const FlSpot(3, 50),
-                          const FlSpot(4, 40),
-                          const FlSpot(5, 55),
-                          const FlSpot(6, 45),
-                        ],
-                        isCurved: true,
-                        color: Colors.pink.withOpacity(0.7),
-                        barWidth: 3,
-                        isStrokeCapRound: true,
-                        dotData: const FlDotData(show: false),
-                        belowBarData: BarAreaData(show: false),
-                      ),
-                      // Dark line (main)
-                      LineChartBarData(
-                        spots: [
-                          const FlSpot(0, 20),
-                          const FlSpot(1, 35),
-                          const FlSpot(2, 25),
-                          const FlSpot(3, 40),
-                          const FlSpot(4, 15),
-                          const FlSpot(5, 25),
-                          const FlSpot(6, 20),
-                        ],
-                        isCurved: true,
-                        color: Colors.black87,
-                        barWidth: 4,
-                        isStrokeCapRound: true,
-                        dotData: const FlDotData(show: false),
-                        belowBarData: BarAreaData(show: false),
-                      ),
+                      _buildPeriodSelector(),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 200,
+                    child: BarChart(
+                      BarChartData(
+                        alignment: BarChartAlignment.spaceAround,
+                        maxY: 100,
+                        barTouchData: BarTouchData(
+                          enabled: true,
+                          touchTooltipData: BarTouchTooltipData(
+                            tooltipBgColor: Colors.white.withOpacity(0.9),
+                            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                              return BarTooltipItem(
+                                '${rod.toY.round()}%',
+                                TextStyle(
+                                  color: const Color(0xFF1E3A8A),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (double value, TitleMeta meta) {
+                                String text = '';
+                                switch (value.toInt()) {
+                                  case 0:
+                                    text = 'Mon';
+                                    break;
+                                  case 1:
+                                    text = 'Tue';
+                                    break;
+                                  case 2:
+                                    text = 'Wed';
+                                    break;
+                                  case 3:
+                                    text = 'Thu';
+                                    break;
+                                  case 4:
+                                    text = 'Fri';
+                                    break;
+                                }
+                                return Text(
+                                  text,
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                );
+                              },
+                              reservedSize: 30,
+                            ),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (double value, TitleMeta meta) {
+                                String text = '';
+                                if (value == 0) {
+                                  text = '0%';
+                                } else if (value == 50) {
+                                  text = '50%';
+                                } else if (value == 100) {
+                                  text = '100%';
+                                }
+                                return Text(
+                                  text,
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                );
+                              },
+                              reservedSize: 30,
+                            ),
+                          ),
+                        ),
+                        borderData: FlBorderData(
+                          show: false,
+                        ),
+                        barGroups: [
+                          BarChartGroupData(
+                            x: 0,
+                            barRods: [
+                              BarChartRodData(
+                                toY: 88,
+                                color: Colors.white,
+                                width: 22,
+                                borderRadius: const BorderRadius.all(Radius.circular(4)),
+                              ),
+                            ],
+                          ),
+                          BarChartGroupData(
+                            x: 1,
+                            barRods: [
+                              BarChartRodData(
+                                toY: 92,
+                                color: Colors.white,
+                                width: 22,
+                                borderRadius: const BorderRadius.all(Radius.circular(4)),
+                              ),
+                            ],
+                          ),
+                          BarChartGroupData(
+                            x: 2,
+                            barRods: [
+                              BarChartRodData(
+                                toY: 85,
+                                color: Colors.white,
+                                width: 22,
+                                borderRadius: const BorderRadius.all(Radius.circular(4)),
+                              ),
+                            ],
+                          ),
+                          BarChartGroupData(
+                            x: 3,
+                            barRods: [
+                              BarChartRodData(
+                                toY: 78,
+                                color: Colors.white,
+                                width: 22,
+                                borderRadius: const BorderRadius.all(Radius.circular(4)),
+                              ),
+                            ],
+                          ),
+                          BarChartGroupData(
+                            x: 4,
+                            barRods: [
+                              BarChartRodData(
+                                toY: 90,
+                                color: Colors.white,
+                                width: 22,
+                                borderRadius: const BorderRadius.all(Radius.circular(4)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+  
+  Widget _buildPeriodSelector() {
+    return Row(
+      children: ['Today', 'Weekly', 'Monthly'].map((period) {
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedPeriod = period;
+            });
+          },
+          child: Container(
+            margin: const EdgeInsets.only(left: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: _selectedPeriod == period 
+                  ? Colors.white.withOpacity(0.3)
+                  : Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Text(
+              period,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.white.withOpacity(0.9),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -580,28 +667,99 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       ),
     );
   }
-
-  Widget _buildBottomNavigationBar() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.5),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _entranceController,
-          curve: const Interval(0.6, 1.0, curve: Curves.easeOutCubic),
-        )),
+  
+  Widget _buildNotificationCard() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.black.withOpacity(0.1),
                 blurRadius: 20,
-                offset: const Offset(0, -5),
+                offset: const Offset(0, 10),
               ),
             ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.notifications_active,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "New System Update Available",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Tap to view the latest features and improvements",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.white,
+                  size: 16,
+                ),
+                onPressed: () {
+                  // Handle notification tap
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            border: Border(
+              top: BorderSide(
+                color: Colors.white.withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
           ),
           child: BottomNavigationBar(
             currentIndex: _selectedIndex,
@@ -611,22 +769,23 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
               });
             },
             type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            selectedItemColor: Colors.blue,
-            unselectedItemColor: Colors.grey,
-            elevation: 0,
+            backgroundColor: Colors.transparent,
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.white.withOpacity(0.7),
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
             items: const [
               BottomNavigationBarItem(
-                icon: Icon(Icons.home),
+                icon: Icon(Icons.dashboard),
                 label: 'Dashboard',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.analytics),
-                label: 'Users',
+                icon: Icon(Icons.people),
+                label: 'Students',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.assessment),
-                label: 'Reports',
+                icon: Icon(Icons.school),
+                label: 'Teachers',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.settings),
