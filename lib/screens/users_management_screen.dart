@@ -302,15 +302,27 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              if (widget.onBackPressed != null) {
-                widget.onBackPressed!();
-              } else {
-                Navigator.of(context).pop();
-              }
-            },
+          // ACLC Logo
+          SizedBox(
+            width: 50,
+            height: 50,
+            child: Image.asset(
+              'assets/acla logo.png',
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.school,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                );
+              },
+            ),
           ),
           const Expanded(
             child: Text(
