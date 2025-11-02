@@ -267,55 +267,48 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
           crossAxisSpacing: 16,
           childAspectRatio: 1.2,
           children: [
-            // Blue highlighted card - Total Registered (not clickable)
+            // Total Registered card with blue-purple gradient
             _buildModernStatCard(
               title: 'Total Registered',
               value: '1,336',
               progress: 0.7,
-              color: Colors.blue,
-              bgColor: const Color(0xFF1E3A8A),
-              isHighlighted: true,
-              onTap: null, // Not clickable - display only
+              gradientColors: [const Color(0xFF3B82F6), const Color(0xFF8B5CF6)],
+              icon: Icons.people_alt,
+              onTap: null,
             ),
-          // Total Students (clickable)
-          _buildModernStatCard(
-            title: 'Total Students',
-            value: '1,247',
-            progress: 0.3,
-            color: Colors.green,
-            bgColor: Colors.white,
-            isHighlighted: false,
-            onTap: () {
-              // Navigation disabled for now
-              ;
-            },
-          ),
-          // Total Teachers (clickable)
-          _buildModernStatCard(
-            title: 'Total Teachers',
-            value: '89',
-            progress: 0.7,
-            color: Colors.orange,
-            bgColor: Colors.white,
-            isHighlighted: false,
-            onTap: () {
-              // Navigation disabled for now
-              ;
-            },
-          ),
-          // User Management (clickable)
-          _buildModernStatCard(
-            title: 'User Management',
-            value: '1,336',
-            progress: 0.7,
-            color: Colors.purple,
-            bgColor: Colors.white,
-            isHighlighted: false,
-            onTap: () {
-              // Navigation disabled for now
-              ;
-            },
-          ),
+            // Total Students card with emerald-green gradient
+            _buildModernStatCard(
+              title: 'Total Students',
+              value: '1,247',
+              progress: 0.3,
+              gradientColors: [const Color(0xFF10B981), const Color(0xFF34D399)],
+              icon: Icons.school,
+              onTap: () {
+                // Navigation disabled for now
+              },
+            ),
+            // Total Teachers card with orange-amber gradient
+            _buildModernStatCard(
+              title: 'Total Teachers',
+              value: '89',
+              progress: 0.7,
+              gradientColors: [const Color(0xFFF59E0B), const Color(0xFFFBBF24)],
+              icon: Icons.person_outline,
+              onTap: () {
+                // Navigation disabled for now
+              },
+            ),
+            // User Management card with pink-rose gradient
+            _buildModernStatCard(
+              title: 'User Management',
+              value: '1,336',
+              progress: 0.7,
+              gradientColors: [const Color(0xFFEC4899), const Color(0xFFF472B6)],
+              icon: Icons.settings_applications,
+              onTap: () {
+                // Navigation disabled for now
+              },
+            ),
           ],
         ),
       ),
@@ -326,9 +319,8 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     required String title,
     required String value,
     required double progress,
-    required Color color,
-    required Color bgColor,
-    required bool isHighlighted,
+    required List<Color> gradientColors,
+    required IconData icon,
     VoidCallback? onTap,
   }) {
     return GestureDetector(
@@ -340,15 +332,22 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(isHighlighted ? 0.3 : 0.2),
+              gradient: LinearGradient(
+                colors: [
+                  gradientColors[0].withOpacity(0.3),
+                  gradientColors[1].withOpacity(0.2),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: gradientColors[0].withOpacity(0.4),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: gradientColors[0].withOpacity(0.2),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -357,6 +356,35 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: gradientColors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: gradientColors[0].withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        icon,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 Text(
                   value,
                   style: const TextStyle(
@@ -379,18 +407,27 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                   children: [
                     Expanded(
                       child: Container(
-                        height: 4,
+                        height: 5,
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(2),
+                          borderRadius: BorderRadius.circular(3),
                         ),
                         child: FractionallySizedBox(
                           alignment: Alignment.centerLeft,
                           widthFactor: progress,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(2),
+                              gradient: LinearGradient(
+                                colors: gradientColors,
+                              ),
+                              borderRadius: BorderRadius.circular(3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: gradientColors[0].withOpacity(0.5),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -402,7 +439,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.white.withOpacity(0.9),
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -446,17 +483,20 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Attendance Overview',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      const Expanded(
+                        child: Text(
+                          'Attendance Overview',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                      _buildPeriodSelector(),
+                      Flexible(
+                        child: _buildPeriodSelector(),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -546,56 +586,81 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                           show: false,
                         ),
                         barGroups: [
+                          // Monday - Blue gradient
                           BarChartGroupData(
                             x: 0,
                             barRods: [
                               BarChartRodData(
                                 toY: 88,
-                                color: Colors.white,
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                ),
                                 width: 22,
                                 borderRadius: const BorderRadius.all(Radius.circular(4)),
                               ),
                             ],
                           ),
+                          // Tuesday - Emerald gradient
                           BarChartGroupData(
                             x: 1,
                             barRods: [
                               BarChartRodData(
                                 toY: 92,
-                                color: Colors.white,
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF10B981), Color(0xFF34D399)],
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                ),
                                 width: 22,
                                 borderRadius: const BorderRadius.all(Radius.circular(4)),
                               ),
                             ],
                           ),
+                          // Wednesday - Orange gradient
                           BarChartGroupData(
                             x: 2,
                             barRods: [
                               BarChartRodData(
                                 toY: 85,
-                                color: Colors.white,
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                ),
                                 width: 22,
                                 borderRadius: const BorderRadius.all(Radius.circular(4)),
                               ),
                             ],
                           ),
+                          // Thursday - Purple gradient
                           BarChartGroupData(
                             x: 3,
                             barRods: [
                               BarChartRodData(
                                 toY: 78,
-                                color: Colors.white,
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                ),
                                 width: 22,
                                 borderRadius: const BorderRadius.all(Radius.circular(4)),
                               ),
                             ],
                           ),
+                          // Friday - Pink gradient
                           BarChartGroupData(
                             x: 4,
                             barRods: [
                               BarChartRodData(
                                 toY: 90,
-                                color: Colors.white,
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFEC4899), Color(0xFFF472B6)],
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                ),
                                 width: 22,
                                 borderRadius: const BorderRadius.all(Radius.circular(4)),
                               ),
@@ -615,8 +680,20 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
   }
   
   Widget _buildPeriodSelector() {
-    return Row(
-      children: ['Today', 'Weekly', 'Monthly'].map((period) {
+    final periods = ['Today', 'Weekly', 'Monthly'];
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: periods.map((period) {
+        final isSelected = _selectedPeriod == period;
+        final colors = [
+          [const Color(0xFF7C3AED), const Color(0xFFA855F7)], // Purple gradient
+          [const Color(0xFF059669), const Color(0xFF10B981)], // Emerald gradient
+          [const Color(0xFFDC2626), const Color(0xFFEF4444)], // Red gradient
+        ];
+        final colorIndex = periods.indexOf(period) % colors.length;
+        final gradientColors = colors[colorIndex];
+        
         return GestureDetector(
           onTap: () {
             setState(() {
@@ -624,24 +701,39 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
             });
           },
           child: Container(
-            margin: const EdgeInsets.only(left: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: _selectedPeriod == period 
-                  ? Colors.white.withOpacity(0.3)
-                  : Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
+              gradient: isSelected
+                  ? LinearGradient(
+                      colors: gradientColors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : null,
+              color: isSelected ? null : Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1,
+                color: isSelected
+                    ? gradientColors[0].withOpacity(0.5)
+                    : Colors.white.withOpacity(0.3),
+                width: isSelected ? 1.5 : 1,
               ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: gradientColors[0].withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
             ),
             child: Text(
               period,
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.white.withOpacity(0.9),
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: Colors.white,
               ),
             ),
           ),
