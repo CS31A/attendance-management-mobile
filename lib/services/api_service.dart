@@ -157,84 +157,174 @@ class ApiService {
     }
   }
 
-  // Get list of users
+  // Get list of users - fetches from separate endpoints for instructors, students, and admins
   Future<Map<String, dynamic>> getUsers() async {
     try {
-      // Try admin users endpoint first
-      final url = Uri.parse('$baseUrl/api/account/admin/users');
       final headers = await _getHeaders();
-
-      print('📤 Fetching users: $url');
-
-      final response = await http.get(url, headers: headers);
-
-      print('📥 Response status: ${response.statusCode}');
-      print('📥 Response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
+      final List<Map<String, dynamic>> allUsers = [];
+      
+      // Fetch instructors (teachers)
+      try {
+        final instructorsUrl = Uri.parse('$baseUrl/api/instructors');
+        print('📤 Fetching instructors (teachers): $instructorsUrl');
         
-        // Handle different response structures
-        if (responseData is Map<String, dynamic>) {
-          if (responseData.containsKey('data')) {
-            return {
-              'success': true,
-              'data': responseData['data'],
-            };
-          } else if (responseData.containsKey('users')) {
-            return {
-              'success': true,
-              'data': responseData['users'],
-            };
-          } else {
-            return {
-              'success': true,
-              'data': responseData,
-            };
+        final instructorsResponse = await http.get(instructorsUrl, headers: headers);
+        print('📥 Instructors response status: ${instructorsResponse.statusCode}');
+        print('📥 Instructors response body: ${instructorsResponse.body}');
+        
+        if (instructorsResponse.statusCode == 200 && instructorsResponse.body.isNotEmpty) {
+          final instructorsData = jsonDecode(instructorsResponse.body);
+          List<Map<String, dynamic>> instructors = [];
+          
+          if (instructorsData is List) {
+            instructors = List<Map<String, dynamic>>.from(instructorsData);
+          } else if (instructorsData is Map<String, dynamic> && instructorsData.containsKey('data')) {
+            instructors = List<Map<String, dynamic>>.from(instructorsData['data']);
+          } else if (instructorsData is Map<String, dynamic>) {
+            // Try to find array data in the response
+            print('⚠️ Unexpected instructors response format: $instructorsData');
           }
-        } else if (responseData is List) {
-          return {
-            'success': true,
-            'data': responseData,
-          };
+          
+          if (instructors.isEmpty) {
+            print('⚠️ No instructors found in response');
+          }
+          
+          final instructorsCount = instructors.length;
+          
+          // Map instructors to user format with role
+          for (var instructor in instructors) {
+            final user = Map<String, dynamic>.from(instructor);
+            user['role'] = 'Teacher';
+            // Map userId if it exists
+            if (instructor.containsKey('userId')) {
+              user['id'] = instructor['userId'];
+            }
+            // Combine firstname and lastname into name fields if needed
+            if (instructor.containsKey('firstname') || instructor.containsKey('lastname')) {
+              final firstname = instructor['firstname']?.toString() ?? '';
+              final lastname = instructor['lastname']?.toString() ?? '';
+              user['firstname'] = firstname;
+              user['lastname'] = lastname;
+              user['name'] = '$firstname $lastname'.trim();
+            }
+            allUsers.add(user);
+          }
+          print('✅ Fetched $instructorsCount instructors');
         } else {
-          return {
-            'success': true,
-            'data': [],
-          };
+          print('⚠️ Instructors endpoint returned status ${instructorsResponse.statusCode}');
         }
-      } else if (response.statusCode == 404) {
-        // If endpoint doesn't exist, return empty list for now
-        print('⚠️ Users endpoint not found, returning empty list');
-        return {
-          'success': true,
-          'data': [],
-          'message': 'Users endpoint not available',
-        };
-      } else {
-        final responseData = response.body.isNotEmpty 
-            ? jsonDecode(response.body) as Map<String, dynamic>
-            : <String, dynamic>{};
-        return {
-          'success': false,
-          'message': responseData['message'] ?? 'Failed to fetch users',
-        };
+      } catch (e) {
+        print('⚠️ Error fetching instructors: $e');
       }
+      
+      // Fetch students
+      try {
+        final studentsUrl = Uri.parse('$baseUrl/api/students');
+        print('📤 Fetching students: $studentsUrl');
+        
+        final studentsResponse = await http.get(studentsUrl, headers: headers);
+        print('📥 Students response status: ${studentsResponse.statusCode}');
+        
+        print('📥 Students response body: ${studentsResponse.body}');
+        
+        if (studentsResponse.statusCode == 200 && studentsResponse.body.isNotEmpty) {
+          final studentsData = jsonDecode(studentsResponse.body);
+          List<Map<String, dynamic>> students = [];
+          
+          if (studentsData is List) {
+            students = List<Map<String, dynamic>>.from(studentsData);
+          } else if (studentsData is Map<String, dynamic> && studentsData.containsKey('data')) {
+            students = List<Map<String, dynamic>>.from(studentsData['data']);
+          } else if (studentsData is Map<String, dynamic>) {
+            // Try to find array data in the response
+            print('⚠️ Unexpected students response format: $studentsData');
+          }
+          
+          if (students.isEmpty && studentsResponse.statusCode == 200) {
+            print('⚠️ No students found in response (empty array is valid)');
+          }
+          
+          final studentsCount = students.length;
+          
+          // Map students to user format with role
+          for (var student in students) {
+            final user = Map<String, dynamic>.from(student);
+            user['role'] = 'Student';
+            // Map userId if it exists
+            if (student.containsKey('userId')) {
+              user['id'] = student['userId'];
+            }
+            // Combine firstname and lastname into name fields if needed
+            if (student.containsKey('firstname') || student.containsKey('lastname')) {
+              final firstname = student['firstname']?.toString() ?? '';
+              final lastname = student['lastname']?.toString() ?? '';
+              user['firstname'] = firstname;
+              user['lastname'] = lastname;
+              user['name'] = '$firstname $lastname'.trim();
+            }
+            allUsers.add(user);
+          }
+          print('✅ Fetched $studentsCount students');
+        }
+      } catch (e) {
+        print('⚠️ Error fetching students: $e');
+      }
+      
+      // Fetch admins (if endpoint exists)
+      try {
+        final adminsUrl = Uri.parse('$baseUrl/api/admin');
+        print('📤 Fetching admins: $adminsUrl');
+        
+        final adminsResponse = await http.get(adminsUrl, headers: headers);
+        print('📥 Admins response status: ${adminsResponse.statusCode}');
+        
+        if (adminsResponse.statusCode == 200 && adminsResponse.body.isNotEmpty) {
+          final adminsData = jsonDecode(adminsResponse.body);
+          List<Map<String, dynamic>> admins = [];
+          
+          if (adminsData is List) {
+            admins = List<Map<String, dynamic>>.from(adminsData);
+          } else if (adminsData is Map<String, dynamic> && adminsData.containsKey('data')) {
+            admins = List<Map<String, dynamic>>.from(adminsData['data']);
+          }
+          
+          final adminsCount = admins.length;
+          
+          // Map admins to user format with role
+          for (var admin in admins) {
+            final user = Map<String, dynamic>.from(admin);
+            user['role'] = 'Admin';
+            if (admin.containsKey('userId')) {
+              user['id'] = admin['userId'];
+            }
+            if (admin.containsKey('firstname') || admin.containsKey('lastname')) {
+              final firstname = admin['firstname']?.toString() ?? '';
+              final lastname = admin['lastname']?.toString() ?? '';
+              user['firstname'] = firstname;
+              user['lastname'] = lastname;
+              user['name'] = '$firstname $lastname'.trim();
+            }
+            allUsers.add(user);
+          }
+          print('✅ Fetched $adminsCount admins');
+        }
+      } catch (e) {
+        print('⚠️ Error fetching admins (endpoint might not exist): $e');
+      }
+      
+      print('✅ Total users fetched: ${allUsers.length}');
+      
+      return {
+        'success': true,
+        'data': allUsers,
+      };
     } catch (e) {
       print('❌ Get users error: $e');
-      
-      // If it's a format exception, try to return empty list
-      if (e.toString().contains('404') || e.toString().contains('Not Found')) {
-        return {
-          'success': true,
-          'data': [],
-          'message': 'Users endpoint not available',
-        };
-      }
       
       return {
         'success': false,
         'message': 'Failed to connect to server.',
+        'data': [],
       };
     }
   }
