@@ -131,10 +131,6 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
           onBackPressed: _navigateToDashboard,
         );
       case 2:
-        return ReportsScreen(
-          onBackPressed: _navigateToDashboard,
-        );
-      case 3:
         return ProfileEditScreen(
           user: User(
             id: '1',
@@ -180,67 +176,43 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
         position: _slideAnimation,
         child: Row(
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Dashboard',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+            // Logo
+            SizedBox(
+              width: 50,
+              height: 50,
+              child: Image.asset(
+                'assets/acla logo.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.school,
                       color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black26,
-                          offset: Offset(0, 2),
-                          blurRadius: 4,
-                        ),
-                      ],
+                      size: 30,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Welcome back, Christian Dave',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
-            // Profile Avatar - Made Clickable
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProfileEditScreen(
-                      user: User(
-                        id: '1',
-                        name: 'Admin User',
-                        email: 'admin@example.com',
-                        role: 'admin',
-                      ),
-                    ),
+            const SizedBox(width: 12),
+            // Dashboard Title
+            const Text(
+              'Dashboard',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    color: Colors.black26,
+                    offset: Offset(0, 2),
+                    blurRadius: 4,
                   ),
-                );
-              },
-              child: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.5),
-                    width: 2,
-                  ),
-                  image: const DecorationImage(
-                    image: NetworkImage('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'),
-                    fit: BoxFit.cover,
-                  ),
-                ),
+                ],
               ),
             ),
           ],
@@ -828,15 +800,11 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.people),
-                label: 'Students',
+                label: 'Users',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.school),
-                label: 'Teachers',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.settings),
-                label: 'Settings',
+                icon: Icon(Icons.person),
+                label: 'Profile',
               ),
             ],
           ),

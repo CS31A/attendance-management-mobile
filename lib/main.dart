@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'screens/admin_dashboard.dart';
 import 'services/app_data.dart';
+import 'services/api_service.dart';
+import 'services/storage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,6 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _apiService = ApiService();
 
   bool _isLoading = false;
   bool _isPasswordVisible = false;
@@ -62,17 +65,23 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      const String hardcodedUsername = 'admin';
-      const String hardcodedPassword = 'password123';
-      String username = _usernameController.text.trim();
-      String password = _passwordController.text.trim();
+      final response = await _apiService.login(
+        _usernameController.text.trim(),
+        _passwordController.text,
+      );
 
-      // Simulate API delay
-      await Future.delayed(const Duration(milliseconds: 500));
+      print('📦 Login Response: $response');
 
-      if (username == hardcodedUsername && password == hardcodedPassword) {
+      if (response['success'] == true && response['accessToken'] != null) {
+        // Save tokens
+        await StorageService.saveTokens(
+          response['accessToken'] as String,
+          response['refreshToken'] as String? ?? '',
+        );
+
+        // Save login status
         await AppStorage.setLoggedIn(true);
-        
+
         if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
@@ -82,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } else {
         setState(() {
-          _errorMessage = 'Invalid username or password';
+          _errorMessage = response['message'] as String? ?? 'Login failed';
         });
       }
     } catch (e) {
