@@ -80,6 +80,86 @@ class ApiService {
     }
   }
 
+  // Refresh access token
+  Future<Map<String, dynamic>> refreshToken() async {
+    try {
+      final refreshTokenValue = await StorageService.getRefreshToken();
+      final oldAccessToken = await StorageService.getAccessToken();
+      
+      if (refreshTokenValue == null || refreshTokenValue.isEmpty) {
+        return {
+          'success': false,
+          'message': 'No refresh token available',
+        };
+      }
+
+      final url = Uri.parse('$baseUrl/api/account/refresh');
+      final headers = {
+        'Content-Type': 'application/json',
+        'Accept': '*/*',
+        if (oldAccessToken != null) 'Authorization': 'Bearer $oldAccessToken',
+      };
+      
+      final body = {
+        'refreshToken': refreshTokenValue,
+        'oldAccessToken': oldAccessToken,
+      };
+
+      print('📤 Refreshing token: $url');
+      print('📦 Request body: ${body.map((k, v) => MapEntry(k, k == 'refreshToken' || k == 'oldAccessToken' ? (v != null ? '${v.toString().substring(0, v.toString().length > 20 ? 20 : v.toString().length)}...' : null) : v))}');
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        // Save new tokens if refresh was successful
+        if (responseData['success'] == true && responseData['accessToken'] != null) {
+          await StorageService.saveTokens(
+            responseData['accessToken'] as String,
+            responseData['refreshToken'] as String? ?? refreshTokenValue,
+          );
+        }
+        
+        return {
+          'success': responseData['success'] ?? true,
+          'message': responseData['message'] ?? 'Token refreshed successfully',
+          'accessToken': responseData['accessToken'],
+          'refreshToken': responseData['refreshToken'],
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to refresh token',
+          'accessToken': null,
+          'refreshToken': null,
+        };
+      }
+    } catch (e) {
+      print('❌ Refresh token error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server. Please check your internet connection.',
+        'accessToken': null,
+        'refreshToken': null,
+      };
+    }
+  }
+
   // Register a new user
   Future<Map<String, dynamic>> registerUser({
     required String username,
