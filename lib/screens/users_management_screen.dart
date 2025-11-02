@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/api_service.dart';
+import 'filtered_users_screen.dart';
 
 class UsersManagementScreen extends StatefulWidget {
   final VoidCallback? onBackPressed;
@@ -245,38 +246,47 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                                     Row(
                                       children: [
                                         Expanded(
-                                          child: _buildUserCategoryCard(
-                                            label: 'Students',
-                                            count: _studentsCount,
-                                            icon: Icons.school,
-                                            gradientColors: [
-                                              const Color(0xFF10B981),
-                                              const Color(0xFF34D399),
-                                            ],
+                                          child: GestureDetector(
+                                            onTap: () => _navigateToFilteredUsers('Student'),
+                                            child: _buildUserCategoryCard(
+                                              label: 'Students',
+                                              count: _studentsCount,
+                                              icon: Icons.school,
+                                              gradientColors: [
+                                                const Color(0xFF10B981),
+                                                const Color(0xFF34D399),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
-                                          child: _buildUserCategoryCard(
-                                            label: 'Teacher',
-                                            count: _teachersCount,
-                                            icon: Icons.person,
-                                            gradientColors: [
-                                              const Color(0xFF3B82F6),
-                                              const Color(0xFF60A5FA),
-                                            ],
+                                          child: GestureDetector(
+                                            onTap: () => _navigateToFilteredUsers('Teacher'),
+                                            child: _buildUserCategoryCard(
+                                              label: 'Teacher',
+                                              count: _teachersCount,
+                                              icon: Icons.person,
+                                              gradientColors: [
+                                                const Color(0xFF3B82F6),
+                                                const Color(0xFF60A5FA),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
-                                          child: _buildUserCategoryCard(
-                                            label: 'Admin',
-                                            count: _adminsCount,
-                                            icon: Icons.admin_panel_settings,
-                                            gradientColors: [
-                                              const Color(0xFF8B5CF6),
-                                              const Color(0xFFA78BFA),
-                                            ],
+                                          child: GestureDetector(
+                                            onTap: () => _navigateToFilteredUsers('Admin'),
+                                            child: _buildUserCategoryCard(
+                                              label: 'Admin',
+                                              count: _adminsCount,
+                                              icon: Icons.admin_panel_settings,
+                                              gradientColors: [
+                                                const Color(0xFF8B5CF6),
+                                                const Color(0xFFA78BFA),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -289,6 +299,17 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToFilteredUsers(String role) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => FilteredUsersScreen(
+          users: _users,
+          role: role,
         ),
       ),
     );
