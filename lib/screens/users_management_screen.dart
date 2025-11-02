@@ -89,33 +89,19 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
               // Header
               _buildHeader(),
               
-              // Total Users - Upper Left
+              // User Overview - Upper Left
               if (!_isLoading && _errorMessage == null)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: Row(
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Total Users',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '$_totalUsersCount Users',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                      const Text(
+                        'User Overview',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -154,147 +140,142 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                               ],
                             ),
                           )
-                        : Column(
-                            children: [
-                              // Scrollable content area with graph
-                              Expanded(
-                                child: RefreshIndicator(
-                                  onRefresh: _loadUsers,
-                                  color: Colors.white,
-                                  backgroundColor: const Color(0xFF1E3A8A),
-                                  child: SingleChildScrollView(
-                                    physics: const AlwaysScrollableScrollPhysics(),
+                        : LayoutBuilder(
+                            builder: (context, constraints) {
+                              return Column(
+                                children: [
+                                  // Graph Section - Fixed at top
+                                  Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        // Graph Section
-                                        Container(
-                                          width: double.infinity,
-                                          padding: const EdgeInsets.all(20),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(20),
-                                            border: Border.all(
-                                              color: Colors.white.withOpacity(0.1),
-                                              width: 1,
-                                            ),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.1),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          // Graph Header
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-                                              // Graph Header
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
                                                 children: [
-                                                  Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      const Text(
-                                                        'User Growth',
-                                                        style: TextStyle(
-                                                          color: Colors.white70,
-                                                          fontSize: 12,
-                                                          fontWeight: FontWeight.w500,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 4),
-                                                      Text(
-                                                        '$_totalUsersCount Total',
-                                                        style: const TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 24,
-                                                          fontWeight: FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ],
+                                                  const Text(
+                                                    'User Growth',
+                                                    style: TextStyle(
+                                                      color: Colors.white70,
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    '$_totalUsersCount Total',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 24,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
                                                   ),
                                                 ],
                                               ),
-                                              const SizedBox(height: 24),
-                                              // Chart
-                                              SizedBox(
-                                                height: 220,
-                                                child: _buildAreaChart(),
-                                              ),
                                             ],
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              
-                              // Bottom section with cards
-                              Container(
-                                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Users List',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
+                                          const SizedBox(height: 24),
+                                          // Chart
+                                          SizedBox(
+                                            height: 220,
+                                            child: _buildAreaChart(),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    const SizedBox(height: 16),
-                                    
-                                    // Three Cards Row
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: GestureDetector(
-                                            onTap: () => _navigateToFilteredUsers('Student'),
-                                            child: _buildUserCategoryCard(
-                                              label: 'Students',
-                                              count: _studentsCount,
-                                              icon: Icons.school,
-                                              gradientColors: [
-                                                const Color(0xFF10B981),
-                                                const Color(0xFF34D399),
+                                  ),
+                                  
+                                  // Centered Cards Section
+                                  Expanded(
+                                    child: Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              'Users List',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            
+                                            // Three Cards Row
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: GestureDetector(
+                                                    onTap: () => _navigateToFilteredUsers('Student'),
+                                                    child: _buildUserCategoryCard(
+                                                      label: 'Students',
+                                                      count: _studentsCount,
+                                                      icon: Icons.school,
+                                                      gradientColors: [
+                                                        const Color(0xFF10B981),
+                                                        const Color(0xFF34D399),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: GestureDetector(
+                                                    onTap: () => _navigateToFilteredUsers('Teacher'),
+                                                    child: _buildUserCategoryCard(
+                                                      label: 'Teacher',
+                                                      count: _teachersCount,
+                                                      icon: Icons.person,
+                                                      gradientColors: [
+                                                        const Color(0xFF3B82F6),
+                                                        const Color(0xFF60A5FA),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: GestureDetector(
+                                                    onTap: () => _navigateToFilteredUsers('Admin'),
+                                                    child: _buildUserCategoryCard(
+                                                      label: 'Admin',
+                                                      count: _adminsCount,
+                                                      icon: Icons.admin_panel_settings,
+                                                      gradientColors: [
+                                                        const Color(0xFF8B5CF6),
+                                                        const Color(0xFFA78BFA),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
                                               ],
                                             ),
-                                          ),
+                                          ],
                                         ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: GestureDetector(
-                                            onTap: () => _navigateToFilteredUsers('Teacher'),
-                                            child: _buildUserCategoryCard(
-                                              label: 'Teacher',
-                                              count: _teachersCount,
-                                              icon: Icons.person,
-                                              gradientColors: [
-                                                const Color(0xFF3B82F6),
-                                                const Color(0xFF60A5FA),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: GestureDetector(
-                                            onTap: () => _navigateToFilteredUsers('Admin'),
-                                            child: _buildUserCategoryCard(
-                                              label: 'Admin',
-                                              count: _adminsCount,
-                                              icon: Icons.admin_panel_settings,
-                                              gradientColors: [
-                                                const Color(0xFF8B5CF6),
-                                                const Color(0xFFA78BFA),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                                  ),
+                                ],
+                              );
+                            },
                           ),
               ),
             ],
