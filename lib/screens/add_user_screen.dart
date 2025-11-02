@@ -13,8 +13,9 @@ Future<void> showAddUserModal(BuildContext context, {VoidCallback? onUserCreated
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: Container(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.95,
+          maxHeight: MediaQuery.of(context).size.height * 0.98,
         ),
+        padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -214,7 +215,7 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
     
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.95,
+        maxHeight: MediaQuery.of(context).size.height * 0.98,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -268,6 +269,7 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
                       label: 'Username',
                       icon: Icons.person_outline,
                       controller: _usernameController,
+                      hintText: 'Enter username',
                       isRequired: true,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return 'Username is required.';
@@ -284,6 +286,7 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
                       label: 'First Name',
                       icon: Icons.badge_outlined,
                       controller: _firstnameController,
+                      hintText: 'Enter first name',
                     ),
                     const SizedBox(height: 20),
                     
@@ -292,6 +295,7 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
                       label: 'Last Name',
                       icon: Icons.badge_outlined,
                       controller: _lastnameController,
+                      hintText: 'Enter last name',
                     ),
                     const SizedBox(height: 20),
                     
@@ -300,6 +304,7 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
                       label: 'Email',
                       icon: Icons.email_outlined,
                       controller: _emailController,
+                      hintText: 'Enter email address',
                       isRequired: true,
                       keyboardType: TextInputType.emailAddress,
                       validator: (v) {
@@ -318,6 +323,7 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
                       label: 'Password',
                       icon: Icons.lock_outline,
                       controller: _passwordController,
+                      hintText: 'Enter password',
                       isRequired: true,
                       isVisible: isPasswordVisible,
                       onToggleVisibility: () => setState(() => isPasswordVisible = !isPasswordVisible),
@@ -336,6 +342,7 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
                       label: 'Repeat Password',
                       icon: Icons.lock_outline,
                       controller: _repeatedPasswordController,
+                      hintText: 'Repeat password',
                       isRequired: true,
                       isVisible: isRepeatedPasswordVisible,
                       onToggleVisibility: () => setState(() => isRepeatedPasswordVisible = !isRepeatedPasswordVisible),
@@ -362,10 +369,12 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
                     // Section ID
                     _buildTextField(
                       label: 'Section ID',
-                      icon: Icons.numbers_outlined,
+                      icon: Icons.numbers,
                       controller: _sectionIdController,
-                      hintText: 'Optional',
+                      hintText: 'Enter section ID',
+                      keyboardType: TextInputType.number,
                     ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -535,6 +544,7 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
     required bool isVisible,
     required VoidCallback onToggleVisibility,
     String? Function(String?)? validator,
+    String? hintText,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,6 +589,8 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: const TextStyle(color: Color(0xFF98A2B3)),
             filled: true,
             fillColor: Colors.white,
             prefixIcon: icon != null
@@ -703,4 +715,3 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
     );
   }
 }
-
