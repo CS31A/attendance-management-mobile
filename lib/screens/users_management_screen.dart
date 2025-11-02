@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
@@ -17,7 +18,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   final ApiService _apiService = ApiService();
 
   String _selectedRoleFilter = 'All Roles';
-  final List<String> _roles = ['All Roles', 'Admin', 'Teacher', 'Student'];
   
   List<Map<String, dynamic>> _users = [];
   bool _isLoading = false;
@@ -87,7 +87,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     }).toList();
   }
 
-  int get _totalUsers => _users.length;
   int get _adminCount => _users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'admin').length;
 
   String _getUserName(Map<String, dynamic> user) {
@@ -124,6 +123,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
               _buildHeader(),
               _buildSearchAndFilters(context),
               if (!_isLoading && _errorMessage == null) _buildStatsCards(),
+              const SizedBox(height: 8),
               Expanded(
                 child: _isLoading
                     ? const Center(
@@ -312,62 +312,47 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _buildRoleDropdown()),
-            ],
-          ),
+          _buildRoleToggleButtons(),
           const SizedBox(height: 8),
-          _buildFilterChips(),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChips() {
-    if (_users.isEmpty) return const SizedBox.shrink();
-    
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: _roles.map((role) {
-          final isSelected = _selectedRoleFilter == role;
-          final count = role == 'All Roles'
-              ? _users.length
-              : _users.where((u) => (u['role']?.toString() ?? '') == role).length;
-          
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              selected: isSelected,
-              label: Text('$role ($count)'),
-              onSelected: (selected) {
-                setState(() {
-                  _selectedRoleFilter = role;
-                });
-              },
-              selectedColor: const Color(0xFF3B82F6),
-              checkmarkColor: Colors.white,
-              labelStyle: TextStyle(
-                color: isSelected ? Colors.white : const Color(0xFF1E3A8A),
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-              backgroundColor: Colors.white,
-              side: BorderSide(
-                color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFFE4E7EC),
-                width: isSelected ? 0 : 1,
-              ),
+  Widget _buildRoleToggleButtons() {
+    if (_users.isEmpty) {
+      return Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
             ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildRoleDropdown() {
+          ],
+        ),
+        child: Center(
+          child: Text(
+            'No users to filter',
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 14,
+            ),
+          ),
+        ),
+      );
+    }
+    
+    final allCount = _users.length;
+    final adminCount = _users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'admin').length;
+    final teacherCount = _users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'teacher').length;
+    final studentCount = _users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'student').length;
+    
     return Container(
-      height: 50,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -379,44 +364,175 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           ),
         ],
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _selectedRoleFilter,
-          isExpanded: true,
-          icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF1E3A8A)),
-          style: const TextStyle(color: Color(0xFF1E3A8A)),
-          items: _roles.map((r) => DropdownMenuItem(
-            value: r,
-            child: Text(r, style: const TextStyle(color: Color(0xFF1E3A8A))),
-          )).toList(),
-          onChanged: (val) => setState(() => _selectedRoleFilter = val ?? 'All Roles'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Filter by Role',
+            style: TextStyle(
+              color: Color(0xFF1E3A8A),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildRoleToggleButton(
+                label: 'All',
+                icon: Icons.people_outline,
+                count: allCount,
+                isSelected: _selectedRoleFilter == 'All Roles',
+                onTap: () => setState(() => _selectedRoleFilter = 'All Roles'),
+                gradientColors: const [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+              ),
+              _buildRoleToggleButton(
+                label: 'Admins',
+                icon: Icons.admin_panel_settings,
+                count: adminCount,
+                isSelected: _selectedRoleFilter == 'Admin',
+                onTap: () => setState(() => _selectedRoleFilter = 'Admin'),
+                gradientColors: const [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+              ),
+              _buildRoleToggleButton(
+                label: 'Teachers',
+                icon: Icons.school,
+                count: teacherCount,
+                isSelected: _selectedRoleFilter == 'Teacher',
+                onTap: () => setState(() => _selectedRoleFilter = 'Teacher'),
+                gradientColors: const [Color(0xFF10B981), Color(0xFF34D399)],
+              ),
+              _buildRoleToggleButton(
+                label: 'Students',
+                icon: Icons.person_outline,
+                count: studentCount,
+                isSelected: _selectedRoleFilter == 'Student',
+                onTap: () => setState(() => _selectedRoleFilter = 'Student'),
+                gradientColors: const [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoleToggleButton({
+    required String label,
+    required IconData icon,
+    required int count,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required List<Color> gradientColors,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: gradientColors,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isSelected ? null : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? Colors.transparent : const Color(0xFFE4E7EC),
+            width: 1.5,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: gradientColors[0].withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : gradientColors[0],
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : const Color(0xFF1E3A8A),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  '$count',
+                  style: TextStyle(
+                    color: isSelected ? Colors.white.withOpacity(0.9) : const Color(0xFF667085),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 6),
+              const Icon(
+                Icons.check_circle,
+                color: Colors.white,
+                size: 18,
+              ),
+            ],
+          ],
         ),
       ),
     );
   }
 
   Widget _buildStatsCards() {
-    if (_users.isEmpty) return const SizedBox.shrink();
+    final teacherCount = _users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'teacher').length;
+    final studentCount = _users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'student').length;
     
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           Expanded(
-            child: _buildStatCard(
-              icon: Icons.people_outline,
-              value: _totalUsers.toString(),
-              label: 'Total Users',
-              gradientColors: const [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+            child: _buildGlassStatCard(
+              icon: Icons.school,
+              value: studentCount.toString(),
+              label: 'Students',
+              iconColor: const Color(0xFF10B981),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: _buildStatCard(
+            child: _buildGlassStatCard(
+              icon: Icons.person,
+              value: teacherCount.toString(),
+              label: 'Teacher',
+              iconColor: const Color(0xFF3B82F6),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildGlassStatCard(
               icon: Icons.admin_panel_settings,
               value: _adminCount.toString(),
-              label: 'Admins',
-              gradientColors: const [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+              label: 'Admin',
+              iconColor: const Color(0xFF8B5CF6),
             ),
           ),
         ],
@@ -424,59 +540,88 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     );
   }
 
-  Widget _buildStatCard({
+  Widget _buildGlassStatCard({
     required IconData icon,
     required String value,
     required String label,
-    required List<Color> gradientColors,
+    required Color iconColor,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: gradientColors,
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.25),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.4),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
               ),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: Colors.white, size: 20),
+            ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E3A8A),
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: iconColor,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontFamily: 'Roboto',
+                  letterSpacing: 1.0,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black26,
+                      offset: Offset(0, 2),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Roboto',
+                  letterSpacing: 0.5,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black26,
+                      offset: Offset(0, 1),
+                      blurRadius: 3,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF667085),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -898,24 +1043,34 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                                     setModalState(() => isSaving = false);
                                     
                                     if (response['success'] == true) {
+                                      final message = response['message'] ?? 'User updated';
                                       Navigator.pop(ctx);
                                       await _loadUsers();
                                       if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(response['message'] ?? 'User updated'),
-                                            backgroundColor: Colors.green,
-                                          ),
-                                        );
+                                        try {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(message),
+                                              backgroundColor: Colors.green,
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          // Context no longer valid, ignore
+                                        }
                                       }
                                     } else {
+                                      final message = response['message'] ?? 'Failed to update user';
                                       if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(response['message'] ?? 'Failed to update user'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
+                                        try {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(message),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          // Context no longer valid, ignore
+                                        }
                                       }
                                     }
                                   }
@@ -1117,24 +1272,34 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                                     setModalState(() => isCreating = false);
                                     
                                     if (response['success'] == true) {
+                                      final message = response['message'] ?? 'User created successfully';
                                       Navigator.pop(ctx);
                                       await _loadUsers();
                                       if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(response['message'] ?? 'User created successfully'),
-                                            backgroundColor: Colors.green,
-                                          ),
-                                        );
+                                        try {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(message),
+                                              backgroundColor: Colors.green,
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          // Context no longer valid, ignore
+                                        }
                                       }
                                     } else {
+                                      final message = response['message'] ?? 'Failed to create user';
                                       if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(response['message'] ?? 'Failed to create user'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
+                                        try {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(message),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          // Context no longer valid, ignore
+                                        }
                                       }
                                     }
                                   }
@@ -1202,23 +1367,33 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
               final response = await _apiService.deleteUser(userId);
               
               if (response['success'] == true) {
+                final message = response['message'] ?? 'User deleted';
                 await _loadUsers();
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(response['message'] ?? 'User deleted'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  try {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(message),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  } catch (e) {
+                    // Context no longer valid, ignore
+                  }
                 }
               } else {
+                final message = response['message'] ?? 'Failed to delete user';
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(response['message'] ?? 'Failed to delete user'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  try {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(message),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  } catch (e) {
+                    // Context no longer valid, ignore
+                  }
                 }
               }
             },
