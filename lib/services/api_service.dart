@@ -208,14 +208,21 @@ class ApiService {
       } else {
         // Handle error response
         String errorMessage = 'Registration failed';
+        Map<String, List<String>>? fieldErrors;
+        
         if (responseData.containsKey('errors')) {
           final errors = responseData['errors'] as Map<String, dynamic>;
+          fieldErrors = {};
           final errorList = <String>[];
+          
           errors.forEach((key, value) {
             if (value is List) {
-              errorList.addAll(value.map((e) => e.toString()));
+              final errorMessages = value.map((e) => e.toString()).toList();
+              fieldErrors![key] = errorMessages;
+              errorList.addAll(errorMessages);
             }
           });
+          
           errorMessage = errorList.join(', ');
         } else if (responseData.containsKey('message')) {
           errorMessage = responseData['message'] as String;
@@ -226,6 +233,7 @@ class ApiService {
         return {
           'success': false,
           'message': errorMessage,
+          'errors': fieldErrors,
         };
       }
     } catch (e) {

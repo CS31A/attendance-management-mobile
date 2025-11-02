@@ -59,6 +59,9 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
   bool isPasswordVisible = false;
   bool isRepeatedPasswordVisible = false;
   bool isCreating = false;
+  
+  // Store API validation errors
+  Map<String, String?> fieldErrors = {};
 
   @override
   void dispose() {
@@ -97,6 +100,11 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
     });
 
     if (response['success'] == true) {
+      // Clear any field errors on success
+      setState(() {
+        fieldErrors = {};
+      });
+      
       final message = response['message'] ?? 'User created successfully';
       if (mounted) {
         widget.onUserCreated?.call();
@@ -104,12 +112,40 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
         _showSuccessModal(context, message);
       }
     } else {
+      // Handle API validation errors
+      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
+      
+      setState(() {
+        // Clear previous errors
+        fieldErrors = {};
+        
+        // Map API field names to form field names and store errors
+        if (apiErrors != null) {
+          if (apiErrors.containsKey('Username')) {
+            fieldErrors['username'] = apiErrors['Username']!.first;
+          }
+          if (apiErrors.containsKey('Email')) {
+            fieldErrors['email'] = apiErrors['Email']!.first;
+          }
+          if (apiErrors.containsKey('Password')) {
+            fieldErrors['password'] = apiErrors['Password']!.first;
+          }
+          if (apiErrors.containsKey('RepeatedPassword')) {
+            fieldErrors['repeatedPassword'] = apiErrors['RepeatedPassword']!.first;
+          }
+        }
+      });
+      
+      // Trigger form validation to show field errors
+      _formKey.currentState?.validate();
+      
       final message = response['message'] ?? 'Failed to create user';
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -271,7 +307,12 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
                       controller: _usernameController,
                       hintText: 'Enter username',
                       isRequired: true,
+                      fieldKey: 'username',
                       validator: (v) {
+                        // Check for API error first
+                        if (fieldErrors.containsKey('username')) {
+                          return fieldErrors['username'];
+                        }
                         if (v == null || v.trim().isEmpty) return 'Username is required.';
                         if (v.trim().length < 3 || v.trim().length > 50) {
                           return 'Username must be between 3 and 50 characters.';
@@ -307,7 +348,12 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
                       hintText: 'Enter email address',
                       isRequired: true,
                       keyboardType: TextInputType.emailAddress,
+                      fieldKey: 'email',
                       validator: (v) {
+                        // Check for API error first
+                        if (fieldErrors.containsKey('email')) {
+                          return fieldErrors['email'];
+                        }
                         if (v == null || v.trim().isEmpty) return 'Email is required.';
                         final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
                         if (!emailRegex.hasMatch(v.trim())) {
@@ -327,7 +373,12 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
                       isRequired: true,
                       isVisible: isPasswordVisible,
                       onToggleVisibility: () => setState(() => isPasswordVisible = !isPasswordVisible),
+                      fieldKey: 'password',
                       validator: (v) {
+                        // Check for API error first
+                        if (fieldErrors.containsKey('password')) {
+                          return fieldErrors['password'];
+                        }
                         if (v == null || v.trim().isEmpty) return 'Password is required.';
                         if (v.length < 6 || v.length > 100) {
                           return 'Password must be between 6 and 100 characters.';
@@ -346,7 +397,12 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
                       isRequired: true,
                       isVisible: isRepeatedPasswordVisible,
                       onToggleVisibility: () => setState(() => isRepeatedPasswordVisible = !isRepeatedPasswordVisible),
+                      fieldKey: 'repeatedPassword',
                       validator: (v) {
+                        // Check for API error first
+                        if (fieldErrors.containsKey('repeatedPassword')) {
+                          return fieldErrors['repeatedPassword'];
+                        }
                         if (v == null || v.trim().isEmpty) return 'Repeated password is required.';
                         if (v != _passwordController.text) {
                           return 'Passwords do not match.';
@@ -455,6 +511,7 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
     TextInputType? keyboardType,
     String? Function(String?)? validator,
     String? hintText,
+    String? fieldKey,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,6 +550,16 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
           controller: controller,
           keyboardType: keyboardType,
           validator: validator,
+          onChanged: (value) {
+            // Clear API error when user starts typing
+            if (fieldKey != null && fieldErrors.containsKey(fieldKey)) {
+              setState(() {
+                fieldErrors.remove(fieldKey);
+              });
+              // Re-validate to clear error display
+              _formKey.currentState?.validate();
+            }
+          },
           style: const TextStyle(
             color: Color(0xFF1E3A8A),
             fontSize: 15,
@@ -545,6 +612,7 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
     required VoidCallback onToggleVisibility,
     String? Function(String?)? validator,
     String? hintText,
+    String? fieldKey,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -583,6 +651,16 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
           controller: controller,
           obscureText: !isVisible,
           validator: validator,
+          onChanged: (value) {
+            // Clear API error when user starts typing
+            if (fieldKey != null && fieldErrors.containsKey(fieldKey)) {
+              setState(() {
+                fieldErrors.remove(fieldKey);
+              });
+              // Re-validate to clear error display
+              _formKey.currentState?.validate();
+            }
+          },
           style: const TextStyle(
             color: Color(0xFF1E3A8A),
             fontSize: 15,
