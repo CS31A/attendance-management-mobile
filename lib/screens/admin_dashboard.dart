@@ -159,11 +159,6 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
           
           const SizedBox(height: 16),
           
-          // Notification Card
-          _buildNotificationCard(),
-          
-          const SizedBox(height: 16),
-          
           // Stats Grid (2x2) - Updated with management items
           _buildStatsGrid(),
           
@@ -267,43 +262,43 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
           crossAxisSpacing: 16,
           childAspectRatio: 1.2,
           children: [
-            // Total Registered card with blue-purple gradient
+            // Total Registered card
             _buildModernStatCard(
               title: 'Total Registered',
               value: '1,336',
               progress: 0.7,
-              gradientColors: [const Color(0xFF3B82F6), const Color(0xFF8B5CF6)],
+              gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
               icon: Icons.people_alt,
               onTap: null,
             ),
-            // Total Students card with emerald-green gradient
+            // Total Students card
             _buildModernStatCard(
               title: 'Total Students',
               value: '1,247',
               progress: 0.3,
-              gradientColors: [const Color(0xFF10B981), const Color(0xFF34D399)],
+              gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
               icon: Icons.school,
               onTap: () {
                 // Navigation disabled for now
               },
             ),
-            // Total Teachers card with orange-amber gradient
+            // Total Teachers card
             _buildModernStatCard(
               title: 'Total Teachers',
               value: '89',
               progress: 0.7,
-              gradientColors: [const Color(0xFFF59E0B), const Color(0xFFFBBF24)],
+              gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
               icon: Icons.person_outline,
               onTap: () {
                 // Navigation disabled for now
               },
             ),
-            // User Management card with pink-rose gradient
+            // User Management card
             _buildModernStatCard(
               title: 'User Management',
               value: '1,336',
               progress: 0.7,
-              gradientColors: [const Color(0xFFEC4899), const Color(0xFFF472B6)],
+              gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
               icon: Icons.settings_applications,
               onTap: () {
                 // Navigation disabled for now
@@ -325,34 +320,19 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  gradientColors[0].withOpacity(0.3),
-                  gradientColors[1].withOpacity(0.2),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: gradientColors[0].withOpacity(0.4),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: gradientColors[0].withOpacity(0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
+          ],
+        ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -370,7 +350,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: gradientColors[0].withOpacity(0.4),
+                            color: gradientColors[0].withOpacity(0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -390,7 +370,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Color(0xFF3B82F6),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -398,7 +378,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                   title,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.grey[700],
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -406,12 +386,12 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                 Row(
                   children: [
                     Expanded(
-                      child: Container(
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
+                        child: Container(
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(3),
+                          ),
                         child: FractionallySizedBox(
                           alignment: Alignment.centerLeft,
                           widthFactor: progress,
@@ -436,9 +416,9 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                     const SizedBox(width: 8),
                     Text(
                       '${(progress * 100).toInt()}%',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.9),
+                        color: Color(0xFF3B82F6),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -446,8 +426,6 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                 ),
               ],
             ),
-          ),
-        ),
       ),
     );
   }
@@ -457,28 +435,20 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 1.5,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
               ),
+            ],
+          ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -490,7 +460,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: Color(0xFF3B82F6),
                           ),
                         ),
                       ),
@@ -545,38 +515,38 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                                     text = 'Fri';
                                     break;
                                 }
-                                return Text(
-                                  text,
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.9),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                );
-                              },
-                              reservedSize: 30,
-                            ),
-                          ),
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (double value, TitleMeta meta) {
-                                String text = '';
-                                if (value == 0) {
-                                  text = '0%';
-                                } else if (value == 50) {
-                                  text = '50%';
-                                } else if (value == 100) {
-                                  text = '100%';
-                                }
-                                return Text(
-                                  text,
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.9),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                );
+                            return Text(
+                              text,
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            );
+                          },
+                          reservedSize: 30,
+                        ),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (double value, TitleMeta meta) {
+                            String text = '';
+                            if (value == 0) {
+                              text = '0%';
+                            } else if (value == 50) {
+                              text = '50%';
+                            } else if (value == 100) {
+                              text = '100%';
+                            }
+                            return Text(
+                              text,
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            );
                               },
                               reservedSize: 30,
                             ),
@@ -586,7 +556,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                           show: false,
                         ),
                         barGroups: [
-                          // Monday - Blue gradient
+                          // Monday - Navy blue gradient
                           BarChartGroupData(
                             x: 0,
                             barRods: [
@@ -602,14 +572,14 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                               ),
                             ],
                           ),
-                          // Tuesday - Emerald gradient
+                          // Tuesday - Navy blue gradient
                           BarChartGroupData(
                             x: 1,
                             barRods: [
                               BarChartRodData(
                                 toY: 92,
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF10B981), Color(0xFF34D399)],
+                                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
                                   begin: Alignment.bottomCenter,
                                   end: Alignment.topCenter,
                                 ),
@@ -618,14 +588,14 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                               ),
                             ],
                           ),
-                          // Wednesday - Orange gradient
+                          // Wednesday - Navy blue gradient
                           BarChartGroupData(
                             x: 2,
                             barRods: [
                               BarChartRodData(
                                 toY: 85,
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+                                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
                                   begin: Alignment.bottomCenter,
                                   end: Alignment.topCenter,
                                 ),
@@ -634,14 +604,14 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                               ),
                             ],
                           ),
-                          // Thursday - Purple gradient
+                          // Thursday - Navy blue gradient
                           BarChartGroupData(
                             x: 3,
                             barRods: [
                               BarChartRodData(
                                 toY: 78,
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+                                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
                                   begin: Alignment.bottomCenter,
                                   end: Alignment.topCenter,
                                 ),
@@ -650,14 +620,14 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                               ),
                             ],
                           ),
-                          // Friday - Pink gradient
+                          // Friday - Navy blue gradient
                           BarChartGroupData(
                             x: 4,
                             barRods: [
                               BarChartRodData(
                                 toY: 90,
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFFEC4899), Color(0xFFF472B6)],
+                                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
                                   begin: Alignment.bottomCenter,
                                   end: Alignment.topCenter,
                                 ),
@@ -672,8 +642,6 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                   ),
                 ],
               ),
-            ),
-          ),
         ),
       ),
     );
@@ -686,13 +654,8 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       runSpacing: 6,
       children: periods.map((period) {
         final isSelected = _selectedPeriod == period;
-        final colors = [
-          [const Color(0xFF7C3AED), const Color(0xFFA855F7)], // Purple gradient
-          [const Color(0xFF059669), const Color(0xFF10B981)], // Emerald gradient
-          [const Color(0xFFDC2626), const Color(0xFFEF4444)], // Red gradient
-        ];
-        final colorIndex = periods.indexOf(period) % colors.length;
-        final gradientColors = colors[colorIndex];
+        final blue = const Color(0xFF3B82F6);
+        final lightBlue = const Color(0xFF60A5FA);
         
         return GestureDetector(
           onTap: () {
@@ -705,23 +668,23 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
             decoration: BoxDecoration(
               gradient: isSelected
                   ? LinearGradient(
-                      colors: gradientColors,
+                      colors: [blue, lightBlue],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     )
                   : null,
-              color: isSelected ? null : Colors.white.withOpacity(0.15),
+              color: isSelected ? null : Colors.grey[200],
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: isSelected
-                    ? gradientColors[0].withOpacity(0.5)
-                    : Colors.white.withOpacity(0.3),
+                    ? blue
+                    : Colors.grey[300]!,
                 width: isSelected ? 1.5 : 1,
               ),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: gradientColors[0].withOpacity(0.3),
+                        color: blue.withOpacity(0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -733,7 +696,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: Colors.white,
+                color: isSelected ? Colors.white : Colors.grey[700],
               ),
             ),
           ),
@@ -761,35 +724,27 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
   }
   
   Widget _buildNotificationCard() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1.5,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
+        ],
+      ),
           child: Row(
             children: [
               Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: const Color(0xFF3B82F6),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -803,29 +758,29 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "New System Update Available",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Tap to view the latest features and improvements",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withOpacity(0.8),
-                      ),
-                    ),
+                const Text(
+                  "New System Update Available",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF3B82F6),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Tap to view the latest features and improvements",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
                   ],
                 ),
               ),
               IconButton(
                 icon: const Icon(
                   Icons.arrow_forward_ios,
-                  color: Colors.white,
+                  color: Color(0xFF3B82F6),
                   size: 16,
                 ),
                 onPressed: () {
@@ -834,26 +789,26 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 
   Widget _buildBottomNavigationBar() {
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            border: Border(
-              top: BorderSide(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
           ),
-          child: BottomNavigationBar(
+        ],
+      ),
+      child: BottomNavigationBar(
             currentIndex: _selectedIndex,
             onTap: (index) {
               setState(() {
@@ -885,8 +840,6 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 }
