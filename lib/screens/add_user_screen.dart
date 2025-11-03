@@ -283,10 +283,6 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
               ],
             ),
           ),
@@ -422,15 +418,17 @@ class _AddUserModalContentState extends State<_AddUserModalContent> {
                     ),
                     const SizedBox(height: 20),
                     
-                    // Section ID
-                    _buildTextField(
-                      label: 'Section ID',
-                      icon: Icons.numbers,
-                      controller: _sectionIdController,
-                      hintText: 'Enter section ID',
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 20),
+                    // Section ID (only show for Student role)
+                    if (role == 'Student') ...[
+                      _buildTextField(
+                        label: 'Section ID',
+                        icon: Icons.numbers,
+                        controller: _sectionIdController,
+                        hintText: 'Enter section ID',
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                   ],
                 ),
               ),
