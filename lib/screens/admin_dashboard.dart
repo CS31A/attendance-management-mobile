@@ -2,15 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'teachers_management_screen.dart';
-import 'students_management_screen.dart';
 import 'users_management_screen.dart';
-import 'user_management_hub.dart';
-import '../services/app_data.dart';
 import 'reports_screen.dart';
-import 'admin_settings_screen.dart';
-import 'profile_edit_screen.dart';
-import '../models/user.dart';
+import 'profile_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -131,14 +125,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
           onBackPressed: _navigateToDashboard,
         );
       case 2:
-        return ProfileEditScreen(
-          user: User(
-            id: '1',
-            name: 'Admin User',
-            email: 'admin@example.com',
-            role: 'admin',
-          ),
-        );
+        return const ProfileScreen();
       default:
         return _buildDashboardContent();
     }
