@@ -417,6 +417,47 @@ class ApiService {
     }
   }
 
+  // Get current authenticated account details
+  Future<Map<String, dynamic>> getCurrentAccount() async {
+    try {
+      final headers = await _getHeaders();
+      final url = Uri.parse('$baseUrl/api/account/me');
+
+      print('📤 Fetching current account: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': responseData,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to fetch account',
+          'data': null,
+        };
+      }
+    } catch (e) {
+      print('❌ Get current account error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+        'data': null,
+      };
+    }
+  }
+
   // Update user
   Future<Map<String, dynamic>> updateUser({
     required String userId,
@@ -465,6 +506,96 @@ class ApiService {
       }
     } catch (e) {
       print('❌ Update user error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Update current authenticated user's profile
+  Future<Map<String, dynamic>> updateProfile({
+    String? firstname,
+    String? lastname,
+    String? email,
+    String? currentPassword,
+    String? newPassword,
+    String? confirmNewPassword,
+    String? sectionId,
+    bool? isRegular,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/account/profile');
+      final headers = await _getHeaders();
+
+      final body = <String, dynamic>{
+        if (firstname != null) 'firstname': firstname,
+        if (lastname != null) 'lastname': lastname,
+        if (email != null) 'email': email,
+        if (currentPassword != null) 'currentPassword': currentPassword,
+        if (newPassword != null) 'newPassword': newPassword,
+        if (confirmNewPassword != null) 'confirmNewPassword': confirmNewPassword,
+        if (sectionId != null) 'sectionId': sectionId,
+        if (isRegular != null) 'isRegular': isRegular,
+      };
+
+      print('📤 Updating profile: $url');
+      print('📦 Request body: ${Map<String, dynamic>.from(body)..updateAll((k, v) => k.toLowerCase().contains('password') ? '***' : v)}');
+
+      final response = await http.patch(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': responseData['success'] ?? true,
+          'message': responseData['message'] ?? 'Profile updated successfully',
+          'updatedProfile': responseData['updatedProfile'],
+        };
+      } else {
+        String errorMessage = responseData['message']?.toString() ?? 'Failed to update profile';
+        Map<String, List<String>>? fieldErrors;
+
+        if (responseData.containsKey('errors')) {
+          final errors = responseData['errors'] as Map<String, dynamic>;
+          fieldErrors = {};
+          final errorList = <String>[];
+
+          errors.forEach((key, value) {
+            if (value is List) {
+              final msgs = value.map((e) => e.toString()).toList();
+              fieldErrors![key] = msgs;
+              errorList.addAll(msgs);
+            }
+          });
+
+          if (errorList.isNotEmpty) {
+            errorMessage = errorList.join(', ');
+          }
+        }
+
+        return {
+          'success': false,
+          'message': errorMessage,
+          'errors': fieldErrors,
+        };
+      }
+    } catch (e) {
+      print('❌ Update profile error: $e');
       return {
         'success': false,
         'message': 'Failed to connect to server.',
