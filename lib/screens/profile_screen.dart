@@ -142,7 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                // Edit profile action
+                _showEditProfileModal();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E293B),
@@ -296,35 +296,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ],
-            ),
-          ),
-        ),
-        
-        // Role badge
-        Positioned(
-          top: 210,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.4),
-                  width: 1.5,
-                ),
-              ),
-              child: Text(
-                role.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: 1.2,
-                ),
-              ),
             ),
           ),
         ),
@@ -555,6 +526,515 @@ class _ProfileScreenState extends State<ProfileScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             elevation: 0,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showEditProfileModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.75,
+          ),
+          padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF3B82F6),
+                Color(0xFF60A5FA),
+              ],
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: _EditProfileModalContent(
+            account: _account,
+            onProfileUpdated: () {
+              _loadAccount(); // Reload profile after update
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditProfileModalContent extends StatefulWidget {
+  final Map<String, dynamic>? account;
+  final VoidCallback? onProfileUpdated;
+
+  const _EditProfileModalContent({
+    this.account,
+    this.onProfileUpdated,
+  });
+
+  @override
+  State<_EditProfileModalContent> createState() => _EditProfileModalContentState();
+}
+
+class _EditProfileModalContentState extends State<_EditProfileModalContent> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final ApiService _apiService = ApiService();
+
+  final TextEditingController _firstnameController = TextEditingController();
+  final TextEditingController _lastnameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _sectionIdController = TextEditingController();
+
+  bool isCurrentPasswordVisible = false;
+  bool isNewPasswordVisible = false;
+  bool isConfirmPasswordVisible = false;
+  bool isUpdating = false;
+  bool? isRegular;
+  Map<String, String?> fieldErrors = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill form with current account data
+    if (widget.account != null) {
+      _firstnameController.text = widget.account!['firstname']?.toString() ?? '';
+      _lastnameController.text = widget.account!['lastname']?.toString() ?? '';
+      _emailController.text = widget.account!['email']?.toString() ?? '';
+      _sectionIdController.text = widget.account!['sectionId']?.toString() ?? '';
+      isRegular = widget.account!['isRegular'] as bool?;
+    }
+  }
+
+  @override
+  void dispose() {
+    _firstnameController.dispose();
+    _lastnameController.dispose();
+    _emailController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    _sectionIdController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleUpdateProfile() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      isUpdating = true;
+      fieldErrors = {};
+    });
+
+    final response = await _apiService.updateProfile(
+      firstname: _firstnameController.text.trim().isEmpty ? null : _firstnameController.text.trim(),
+      lastname: _lastnameController.text.trim().isEmpty ? null : _lastnameController.text.trim(),
+      email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+      currentPassword: null,
+      newPassword: null,
+      confirmNewPassword: null,
+      sectionId: _sectionIdController.text.trim().isEmpty ? null : _sectionIdController.text.trim(),
+      isRegular: isRegular,
+    );
+
+    setState(() {
+      isUpdating = false;
+    });
+
+    if (response['success'] == true) {
+      setState(() {
+        fieldErrors = {};
+      });
+
+      final message = response['message'] ?? 'Profile updated successfully';
+      if (mounted) {
+        widget.onProfileUpdated?.call();
+        Navigator.of(context).pop();
+        _showSuccessSnackBar(message);
+      }
+    } else {
+      // Handle API validation errors
+      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
+
+      setState(() {
+        fieldErrors = {};
+
+        if (apiErrors != null) {
+          apiErrors.forEach((key, value) {
+            // Map API field names to form field names
+            String fieldKey = key.toLowerCase();
+            if (fieldKey.contains('firstname')) fieldKey = 'firstname';
+            else if (fieldKey.contains('lastname')) fieldKey = 'lastname';
+            else if (fieldKey.contains('email')) fieldKey = 'email';
+            else if (fieldKey.contains('currentpassword')) fieldKey = 'currentPassword';
+            else if (fieldKey.contains('newpassword')) fieldKey = 'newPassword';
+            else if (fieldKey.contains('confirmpassword')) fieldKey = 'confirmPassword';
+            else if (fieldKey.contains('sectionid')) fieldKey = 'sectionId';
+
+            if (value.isNotEmpty) {
+              fieldErrors[fieldKey] = value.first;
+            }
+          });
+        }
+      });
+
+      _formKey.currentState?.validate();
+
+      final message = response['message'] ?? 'Failed to update profile';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+          // Drag Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12, bottom: 8),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: const Text(
+              'Edit Profile',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+
+          // Form Content
+          Flexible(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(24, 0, 24, bottom + 24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // First Name
+                    _buildTextField(
+                      label: 'First Name',
+                      icon: Icons.badge_outlined,
+                      controller: _firstnameController,
+                      hintText: 'Enter first name',
+                      fieldKey: 'firstname',
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Last Name
+                    _buildTextField(
+                      label: 'Last Name',
+                      icon: Icons.badge_outlined,
+                      controller: _lastnameController,
+                      hintText: 'Enter last name',
+                      fieldKey: 'lastname',
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Email
+                    _buildTextField(
+                      label: 'Email',
+                      icon: Icons.email_outlined,
+                      controller: _emailController,
+                      hintText: 'Enter email address',
+                      keyboardType: TextInputType.emailAddress,
+                      fieldKey: 'email',
+                      validator: (v) {
+                        if (fieldErrors.containsKey('email')) {
+                          return fieldErrors['email'];
+                        }
+                        if (v != null && v.trim().isNotEmpty) {
+                          final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                          if (!emailRegex.hasMatch(v.trim())) {
+                            return 'Invalid email format.';
+                          }
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Section ID
+                    if (widget.account?['role']?.toString().toLowerCase() == 'student') ...[
+                      _buildTextField(
+                        label: 'Section ID',
+                        icon: Icons.numbers,
+                        controller: _sectionIdController,
+                        hintText: 'Enter section ID',
+                        keyboardType: TextInputType.number,
+                        fieldKey: 'sectionId',
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Is Regular (for students)
+                    if (widget.account?['role']?.toString().toLowerCase() == 'student') ...[
+                      _buildRegularToggle(),
+                      const SizedBox(height: 20),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Action Buttons
+          Container(
+            padding: EdgeInsets.fromLTRB(24, 16, 24, bottom > 0 ? 0 : 24),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: isUpdating ? null : () => Navigator.of(context).pop(),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white, width: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: isUpdating ? null : _handleUpdateProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF1E3A8A),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 4,
+                      shadowColor: Colors.black.withOpacity(0.2),
+                    ),
+                    child: isUpdating
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Color(0xFF1E3A8A),
+                            ),
+                          )
+                        : const Text(
+                            'Save Changes',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+    );
+  }
+
+  Widget _buildTextField({
+    required String label,
+    IconData? icon,
+    required TextEditingController controller,
+    bool isRequired = false,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    String? hintText,
+    String? fieldKey,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                color: Colors.white.withOpacity(0.9),
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (isRequired)
+              const Text(
+                ' *',
+                style: TextStyle(
+                  color: Colors.redAccent,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          validator: validator ??
+              (v) {
+                if (fieldKey != null && fieldErrors.containsKey(fieldKey)) {
+                  return fieldErrors[fieldKey];
+                }
+                return null;
+              },
+          onChanged: (value) {
+            if (fieldKey != null && fieldErrors.containsKey(fieldKey)) {
+              setState(() {
+                fieldErrors.remove(fieldKey);
+              });
+              _formKey.currentState?.validate();
+            }
+          },
+          style: const TextStyle(
+            color: Color(0xFF1E3A8A),
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: const TextStyle(color: Color(0xFF98A2B3)),
+            filled: true,
+            fillColor: Colors.white,
+            prefixIcon: icon != null
+                ? Icon(
+                    icon,
+                    color: const Color(0xFF667085),
+                    size: 20,
+                  )
+                : null,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: icon != null ? 16 : 18,
+              vertical: 18,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xFFE4E7EC), width: 1.5),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRegularToggle() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.check_circle_outline,
+              color: Colors.white,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              'Regular Student',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: SwitchListTile(
+            value: isRegular ?? false,
+            onChanged: (value) {
+              setState(() {
+                isRegular = value;
+              });
+            },
+            activeColor: const Color(0xFF3B82F6),
+            title: const Text(
+              'Regular Student',
+              style: TextStyle(
+                color: Color(0xFF1E3A8A),
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           ),
         ),
       ],
