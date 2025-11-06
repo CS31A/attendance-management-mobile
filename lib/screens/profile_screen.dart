@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/storage_service.dart';
+import '../services/app_data.dart';
+import '../main.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -40,6 +43,99 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _error = res['message']?.toString() ?? 'Failed to load account';
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _handleLogout() async {
+    // Show confirmation dialog
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Logout', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout != true) return;
+
+    // Show loading indicator
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // Call logout API
+      final response = await _apiService.logout();
+
+      // Clear tokens and login status regardless of API response
+      await StorageService.clearTokens();
+      await AppStorage.setLoggedIn(false);
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      if (response['success'] == true) {
+        // Navigate to login screen
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Logged out successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // Even if API fails, we still logout locally
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Logged out locally'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } catch (e) {
+      // Clear tokens and logout locally even if there's an error
+      await StorageService.clearTokens();
+      await AppStorage.setLoggedIn(false);
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading dialog
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Logged out locally'),
+          backgroundColor: Colors.orange,
+        ),
+      );
     }
   }
 
@@ -185,6 +281,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: _buildDynamicDetails(),
+        ),
+        
+        const SizedBox(height: 40),
+        
+        // Logout Button
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              onPressed: _handleLogout,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: const BorderSide(color: Colors.white, width: 2),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Logout',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
         ),
         
         const SizedBox(height: 40),

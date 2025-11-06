@@ -603,6 +603,51 @@ class ApiService {
     }
   }
 
+  // Logout user
+  Future<Map<String, dynamic>> logout() async {
+    try {
+      final url = Uri.parse('$baseUrl/api/account/logout');
+      final headers = await _getHeaders();
+
+      print('📤 Logging out: $url');
+
+      final response = await http.post(
+        url,
+        headers: headers,
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': responseData['success'] ?? true,
+          'message': responseData['message'] ?? 'Logged out successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to logout',
+        };
+      }
+    } catch (e) {
+      print('❌ Logout error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
   // Delete user
   Future<Map<String, dynamic>> deleteUser(String userId) async {
     try {
