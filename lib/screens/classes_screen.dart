@@ -1947,8 +1947,8 @@ class _AddCourseModalContentState extends State<_AddCourseModalContent> {
                   if (value == null || value.trim().isEmpty) {
                     return 'Course name is required';
                   }
-                  if (value.trim().length < 1) {
-                    return 'Course name must be at least 1 character';
+                  if (value.trim().length < 20) {
+                    return 'Course name must be at least 20 characters';
                   }
                   if (value.trim().length > 100) {
                     return 'Course name must be at most 100 characters';
