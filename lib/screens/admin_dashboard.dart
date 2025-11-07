@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'users_management_screen.dart';
 import 'reports_screen.dart';
 import 'profile_screen.dart';
+import 'classes_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -121,10 +122,12 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       case 0:
         return _buildDashboardContent();
       case 1:
+        return const ClassesScreen();
+      case 2:
         return UsersManagementScreen(
           onBackPressed: _navigateToDashboard,
         );
-      case 2:
+      case 3:
         return const ProfileScreen();
       default:
         return _buildDashboardContent();
@@ -784,6 +787,10 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
               BottomNavigationBarItem(
                 icon: Icon(Icons.dashboard),
                 label: 'Dashboard',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.class_),
+                label: 'Classes',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.people),

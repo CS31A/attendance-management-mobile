@@ -680,5 +680,278 @@ class ApiService {
       };
     }
   }
+
+  // Get all classrooms
+  Future<Map<String, dynamic>> getClassrooms() async {
+    try {
+      final url = Uri.parse('$baseUrl/api/classrooms');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching classrooms: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+          'data': [],
+        };
+      }
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        List<Map<String, dynamic>> classrooms = [];
+        if (responseData is List) {
+          classrooms = List<Map<String, dynamic>>.from(responseData);
+        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+          classrooms = List<Map<String, dynamic>>.from(responseData['data']);
+        }
+
+        return {
+          'success': true,
+          'data': classrooms,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch classrooms',
+          'data': [],
+        };
+      }
+    } catch (e) {
+      print('❌ Get classrooms error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+        'data': [],
+      };
+    }
+  }
+
+  // Get classroom by ID
+  Future<Map<String, dynamic>> getClassroomById(int id) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/classrooms/$id');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching classroom: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': responseData,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to fetch classroom',
+        };
+      }
+    } catch (e) {
+      print('❌ Get classroom error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Create classroom
+  Future<Map<String, dynamic>> createClassroom(String name) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/classrooms');
+      final headers = await _getHeaders();
+
+      final body = {
+        'name': name,
+      };
+
+      print('📤 Creating classroom: $url');
+      print('📦 Request body: $body');
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Classroom created successfully',
+          'data': responseData,
+        };
+      } else {
+        String errorMessage = responseData['message']?.toString() ?? 'Failed to create classroom';
+        Map<String, List<String>>? fieldErrors;
+
+        if (responseData.containsKey('errors')) {
+          final errors = responseData['errors'] as Map<String, dynamic>;
+          fieldErrors = {};
+          final errorList = <String>[];
+
+          errors.forEach((key, value) {
+            if (value is List) {
+              final msgs = value.map((e) => e.toString()).toList();
+              fieldErrors![key] = msgs;
+              errorList.addAll(msgs);
+            }
+          });
+
+          if (errorList.isNotEmpty) {
+            errorMessage = errorList.join(', ');
+          }
+        }
+
+        return {
+          'success': false,
+          'message': errorMessage,
+          'errors': fieldErrors,
+        };
+      }
+    } catch (e) {
+      print('❌ Create classroom error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Update classroom
+  Future<Map<String, dynamic>> updateClassroom(int id, String? name) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/classrooms/$id');
+      final headers = await _getHeaders();
+
+      final body = <String, dynamic>{};
+      if (name != null) body['name'] = name;
+
+      print('📤 Updating classroom: $url');
+      print('📦 Request body: $body');
+
+      final response = await http.patch(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Classroom updated successfully',
+          'data': responseData,
+        };
+      } else {
+        String errorMessage = responseData['message']?.toString() ?? 'Failed to update classroom';
+        Map<String, List<String>>? fieldErrors;
+
+        if (responseData.containsKey('errors')) {
+          final errors = responseData['errors'] as Map<String, dynamic>;
+          fieldErrors = {};
+          final errorList = <String>[];
+
+          errors.forEach((key, value) {
+            if (value is List) {
+              final msgs = value.map((e) => e.toString()).toList();
+              fieldErrors![key] = msgs;
+              errorList.addAll(msgs);
+            }
+          });
+
+          if (errorList.isNotEmpty) {
+            errorMessage = errorList.join(', ');
+          }
+        }
+
+        return {
+          'success': false,
+          'message': errorMessage,
+          'errors': fieldErrors,
+        };
+      }
+    } catch (e) {
+      print('❌ Update classroom error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Delete classroom
+  Future<Map<String, dynamic>> deleteClassroom(int id) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/classrooms/$id');
+      final headers = await _getHeaders();
+
+      print('📤 Deleting classroom: $url');
+
+      final response = await http.delete(url, headers: headers);
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return {
+          'success': true,
+          'message': 'Classroom deleted successfully',
+        };
+      } else {
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body) as Map<String, dynamic>
+            : <String, dynamic>{};
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to delete classroom',
+        };
+      }
+    } catch (e) {
+      print('❌ Delete classroom error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
 }
 
