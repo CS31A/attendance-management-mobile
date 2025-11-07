@@ -963,11 +963,19 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
         child: Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: Colors.white,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF3B82F6),
+                Color(0xFF60A5FA),
+              ],
+            ),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withOpacity(0.3),
                 blurRadius: 30,
                 offset: const Offset(0, 15),
               ),
@@ -976,17 +984,26 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.warning_amber_rounded,
-                  color: Colors.red,
-                  size: 50,
+              // ACLC Logo
+              SizedBox(
+                width: 50,
+                height: 50,
+                child: Image.asset(
+                  'assets/acla logo.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.school,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 24),
@@ -995,7 +1012,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E3A8A),
+                  color: Colors.white,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1004,7 +1021,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                 'Are you sure you want to delete "$name"? This action cannot be undone.',
                 style: const TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF667085),
+                  color: Colors.white70,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1015,8 +1032,8 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF1E3A8A),
-                        side: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white, width: 2),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1039,8 +1056,8 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                         await _handleDeleteClassroom(classroom);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.red,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1184,11 +1201,19 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
         child: Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: Colors.white,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF3B82F6),
+                Color(0xFF60A5FA),
+              ],
+            ),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withOpacity(0.3),
                 blurRadius: 30,
                 offset: const Offset(0, 15),
               ),
@@ -1197,17 +1222,26 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.warning_amber_rounded,
-                  color: Colors.red,
-                  size: 50,
+              // ACLC Logo
+              SizedBox(
+                width: 50,
+                height: 50,
+                child: Image.asset(
+                  'assets/acla logo.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.school,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 24),
@@ -1216,7 +1250,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E3A8A),
+                  color: Colors.white,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1225,7 +1259,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                 'Are you sure you want to delete "$name"? This action cannot be undone.',
                 style: const TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF667085),
+                  color: Colors.white70,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1236,8 +1270,8 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF1E3A8A),
-                        side: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white, width: 2),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1260,8 +1294,8 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                         await _handleDeleteCourse(course);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.red,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1329,11 +1363,19 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
         child: Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: Colors.white,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF3B82F6),
+                Color(0xFF60A5FA),
+              ],
+            ),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withOpacity(0.3),
                 blurRadius: 30,
                 offset: const Offset(0, 15),
               ),
@@ -1342,17 +1384,26 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle,
-                  color: Colors.green,
-                  size: 50,
+              // ACLC Logo
+              SizedBox(
+                width: 50,
+                height: 50,
+                child: Image.asset(
+                  'assets/acla logo.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.school,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 24),
@@ -1361,7 +1412,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E3A8A),
+                  color: Colors.white,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1370,7 +1421,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                 message,
                 style: const TextStyle(
                   fontSize: 16,
-                  color: Color(0xFF667085),
+                  color: Colors.white70,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1378,12 +1429,13 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3B82F6),
-                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF3B82F6),
                   padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  elevation: 0,
                 ),
                 child: const Text(
                   'OK',
