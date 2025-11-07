@@ -2425,5 +2425,380 @@ class ApiService {
       };
     }
   }
+
+  // Get all instructors
+  Future<Map<String, dynamic>> getInstructors() async {
+    try {
+      final url = Uri.parse('$baseUrl/api/instructors');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching instructors: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+          'data': [],
+        };
+      }
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        List<Map<String, dynamic>> instructors = [];
+        if (responseData is List) {
+          instructors = List<Map<String, dynamic>>.from(responseData);
+        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+          instructors = List<Map<String, dynamic>>.from(responseData['data']);
+        }
+
+        return {
+          'success': true,
+          'data': instructors,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch instructors',
+          'data': [],
+        };
+      }
+    } catch (e) {
+      print('❌ Get instructors error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+        'data': [],
+      };
+    }
+  }
+
+  // Get instructor by ID
+  Future<Map<String, dynamic>> getInstructorById(int id) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/instructors/$id');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching instructor: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': responseData,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to fetch instructor',
+        };
+      }
+    } catch (e) {
+      print('❌ Get instructor error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Update instructor
+  Future<Map<String, dynamic>> updateInstructor({
+    required int id,
+    String? firstname,
+    String? lastname,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/instructors/$id');
+      final headers = await _getHeaders();
+
+      final body = <String, dynamic>{};
+      if (firstname != null) body['firstname'] = firstname;
+      if (lastname != null) body['lastname'] = lastname;
+
+      print('📤 Updating instructor: $url');
+      print('📦 Request body: $body');
+
+      final response = await http.patch(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Instructor updated successfully',
+          'data': responseData,
+        };
+      } else {
+        String errorMessage = responseData['message']?.toString() ?? 'Failed to update instructor';
+        Map<String, List<String>>? fieldErrors;
+
+        if (responseData.containsKey('errors')) {
+          final errors = responseData['errors'] as Map<String, dynamic>;
+          fieldErrors = {};
+          final errorList = <String>[];
+
+          errors.forEach((key, value) {
+            if (value is List) {
+              final msgs = value.map((e) => e.toString()).toList();
+              fieldErrors![key] = msgs;
+              errorList.addAll(msgs);
+            }
+          });
+
+          if (errorList.isNotEmpty) {
+            errorMessage = errorList.join(', ');
+          }
+        }
+
+        return {
+          'success': false,
+          'message': errorMessage,
+          'errors': fieldErrors,
+        };
+      }
+    } catch (e) {
+      print('❌ Update instructor error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Delete instructor (hard delete)
+  Future<Map<String, dynamic>> deleteInstructor(int id) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/instructors/$id');
+      final headers = await _getHeaders();
+
+      print('📤 Deleting instructor: $url');
+
+      final response = await http.delete(url, headers: headers);
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body) as Map<String, dynamic>
+            : <String, dynamic>{};
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Instructor deleted successfully',
+        };
+      } else {
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body) as Map<String, dynamic>
+            : <String, dynamic>{};
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to delete instructor',
+        };
+      }
+    } catch (e) {
+      print('❌ Delete instructor error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Soft delete instructor
+  Future<Map<String, dynamic>> softDeleteInstructor(int id) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/instructors/$id/soft-delete');
+      final headers = await _getHeaders();
+
+      print('📤 Soft deleting instructor: $url');
+
+      final response = await http.patch(url, headers: headers);
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body) as Map<String, dynamic>
+            : <String, dynamic>{};
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Instructor soft deleted successfully',
+        };
+      } else {
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body) as Map<String, dynamic>
+            : <String, dynamic>{};
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to soft delete instructor',
+        };
+      }
+    } catch (e) {
+      print('❌ Soft delete instructor error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Restore instructor
+  Future<Map<String, dynamic>> restoreInstructor(int id) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/instructors/$id/restore');
+      final headers = await _getHeaders();
+
+      print('📤 Restoring instructor: $url');
+
+      final response = await http.patch(url, headers: headers);
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body) as Map<String, dynamic>
+            : <String, dynamic>{};
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Instructor restored successfully',
+        };
+      } else {
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body) as Map<String, dynamic>
+            : <String, dynamic>{};
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to restore instructor',
+        };
+      }
+    } catch (e) {
+      print('❌ Restore instructor error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Get instructor's subjects
+  Future<Map<String, dynamic>> getInstructorSubjects(int instructorId) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/instructors/$instructorId/subjects');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching instructor subjects: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+          'data': [],
+        };
+      }
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        List<Map<String, dynamic>> subjects = [];
+        if (responseData is List) {
+          subjects = List<Map<String, dynamic>>.from(responseData);
+        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+          subjects = List<Map<String, dynamic>>.from(responseData['data']);
+        }
+
+        return {
+          'success': true,
+          'data': subjects,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch instructor subjects',
+          'data': [],
+        };
+      }
+    } catch (e) {
+      print('❌ Get instructor subjects error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+        'data': [],
+      };
+    }
+  }
+
+  // Get instructor profile
+  Future<Map<String, dynamic>> getInstructorProfile() async {
+    try {
+      final url = Uri.parse('$baseUrl/api/instructors/profile');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching instructor profile: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': responseData,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to fetch instructor profile',
+        };
+      }
+    } catch (e) {
+      print('❌ Get instructor profile error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
 }
 

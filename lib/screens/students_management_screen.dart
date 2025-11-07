@@ -171,27 +171,17 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          // ACLC Logo
-          SizedBox(
-            width: 50,
-            height: 50,
-            child: Image.asset(
-              'assets/acla logo.png',
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.school,
-                    color: Colors.white,
-                    size: 30,
-                  ),
-                );
-              },
-            ),
+          // Back Arrow
+          IconButton(
+            onPressed: () {
+              if (widget.onBackPressed != null) {
+                widget.onBackPressed!();
+              } else {
+                Navigator.of(context).pop();
+              }
+            },
+            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 28),
+            tooltip: 'Back',
           ),
           const Expanded(
             child: Text(
