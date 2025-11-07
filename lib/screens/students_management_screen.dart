@@ -1,445 +1,830 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../providers/app_data.dart';
+import '../services/api_service.dart';
+
 class StudentsManagementScreen extends StatefulWidget {
-  const StudentsManagementScreen({super.key});
+  final VoidCallback? onBackPressed;
+  
+  const StudentsManagementScreen({super.key, this.onBackPressed});
 
   @override
   State<StudentsManagementScreen> createState() => _StudentsManagementScreenState();
 }
 
 class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
-  String? _selectedStudentToRemove;
-  final TextEditingController _searchController = TextEditingController();
-  String _selectedStatusFilter = 'All Status';
-  final List<String> _statusOptions = ['All Status', 'Active', 'Inactive'];
+  final ApiService _apiService = ApiService();
   
-  List<Map<String, String>> get _students => AppData.students.value;
+  List<Map<String, dynamic>> _students = [];
+  bool _isLoading = false;
+  String? _errorMessage;
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedStatusFilter = 'All';
 
-  List<Map<String, String>> get _filteredStudents {
-    final query = _searchController.text.trim().toLowerCase();
-    return _students.where((student) {
-      final matchesQuery = query.isEmpty ||
-          student['name']!.toLowerCase().contains(query) ||
-          student['email']!.toLowerCase().contains(query) ||
-          student['grade']!.toLowerCase().contains(query);
-      final matchesStatus = _selectedStatusFilter == 'All Status' || student['status'] == _selectedStatusFilter;
-      return matchesQuery && matchesStatus;
-    }).toList();
+  @override
+  void initState() {
+    super.initState();
+    _loadStudents();
   }
-
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _gradeController = TextEditingController();
 
   @override
   void dispose() {
     _searchController.dispose();
-    _nameController.dispose();
-    _emailController.dispose();
-    _gradeController.dispose();
     super.dispose();
   }
 
-  void _showRemoveStudentDialog(int index) {
-    final student = _students[index];
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Remove Student'),
-          content: Text('Are you sure you want to remove ${student['name']}?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final removed = _students[index];
-                await AppData.deleteByEmail(removed['email']!);
-                setState(() {});
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('${student['name']} removed successfully!'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Remove'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+  Future<void> _loadStudents() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-  Future<void> _showSelectStudentDialog() async {
-    final selected = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Select Student'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _students.length,
-              itemBuilder: (context, index) {
-                final student = _students[index];
-                return ListTile(
-                  leading: const Icon(Icons.school),
-                  title: Text(student['name']!),
-                  subtitle: Text(student['email']!),
-                  onTap: () => Navigator.of(context).pop(student['name']),
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
-            ),
-          ],
-        );
-      },
-    );
-    if (selected != null) {
+    try {
+      final response = await _apiService.getStudents();
+      if (response['success'] == true) {
+        final data = response['data'];
+        if (data is List) {
+          setState(() {
+            _students = List<Map<String, dynamic>>.from(data);
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _students = [];
+            _isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          _errorMessage = response['message'] ?? 'Failed to load students';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
       setState(() {
-        _selectedStudentToRemove = selected;
+        _errorMessage = 'Failed to load students: $e';
+        _isLoading = false;
       });
     }
   }
 
-  void _showAddStudentDialog() {
-    _nameController.clear();
-    _emailController.clear();
-    _gradeController.clear();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: const Color(0xFFF7F8FA),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (BuildContext context) {
-        final bottom = MediaQuery.of(context).viewInsets.bottom;
-        return Padding(
-          padding: EdgeInsets.only(bottom: bottom),
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Add Student', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(labelText: 'Full Name', filled: true, border: OutlineInputBorder()),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter student name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(labelText: 'Email', filled: true, border: OutlineInputBorder()),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter email';
-                      }
-                      final email = value.trim().toLowerCase();
-                      final allowedDomains = [
-                        'gmail.com',
-                        'outlook.com',
-                        'yahoo.com',
-                        'hotmail.com',
-                        'aol.com',
-                        'icloud.com',
-                        'protonmail.com',
-                        'yandex.com',
-                        'mail.com'
-                      ];
-                      
-                      final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                      if (!emailRegex.hasMatch(email)) {
-                        return 'Please enter a valid email address.';
-                      }
-                      
-                      final domain = email.split('@')[1];
-                      if (!allowedDomains.contains(domain)) {
-                        return 'Email must be from an allowed domain (gmail.com, outlook.com, yahoo.com, etc.).';
-                      }
-                      
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _gradeController,
-                    decoration: const InputDecoration(labelText: 'Grade Level', filled: true, border: OutlineInputBorder(), hintText: 'e.g., Grade 10'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter grade level';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            if (_formKey.currentState!.validate()) {
-                              AppData.addStudent({
-                                'name': _nameController.text,
-                                'email': _emailController.text,
-                                'grade': _gradeController.text,
-                                'status': 'Active',
-                              });
-                              setState(() {});
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Student added successfully!'), backgroundColor: Colors.green),
-                              );
-                            }
-                          },
-                          child: const Text('Save'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+  List<Map<String, dynamic>> get _filteredStudents {
+    final query = _searchController.text.trim().toLowerCase();
+    return _students.where((student) {
+      final matchesQuery = query.isEmpty ||
+          (student['firstname']?.toString().toLowerCase() ?? '').contains(query) ||
+          (student['lastname']?.toString().toLowerCase() ?? '').contains(query) ||
+          (student['email']?.toString().toLowerCase() ?? '').contains(query);
+      
+      final isDeleted = student['isDeleted'] == true;
+      final matchesStatus = _selectedStatusFilter == 'All' ||
+          (_selectedStatusFilter == 'Active' && !isDeleted) ||
+          (_selectedStatusFilter == 'Deleted' && isDeleted);
+      
+      return matchesQuery && matchesStatus;
+    }).toList();
   }
+
+  String _getStudentName(Map<String, dynamic> student) {
+    final firstname = student['firstname']?.toString() ?? '';
+    final lastname = student['lastname']?.toString() ?? '';
+    if (firstname.isNotEmpty || lastname.isNotEmpty) {
+      return '$firstname $lastname'.trim();
+    }
+    return 'Student ${student['id']}';
+  }
+
+  int get _totalCount => _students.length;
+  int get _activeCount => _students.where((s) => s['isDeleted'] != true).length;
+  int get _deletedCount => _students.where((s) => s['isDeleted'] == true).length;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6F8),
-      appBar: AppBar(
-        title: const Text('Students'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-          onPressed: () => Navigator.pop(context),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF1E3A8A),
+              Color(0xFF3B82F6),
+              Color(0xFF60A5FA),
+            ],
+          ),
         ),
-        actions: const [],
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              _buildHeader(),
+              
+              // Search and Filter
+              if (!_isLoading && _errorMessage == null)
+                _buildSearchAndFilter(),
+              
+              // Content
+              Expanded(
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      )
+                    : _errorMessage != null
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  _errorMessage!,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  onPressed: _loadStudents,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: const Color(0xFF1E3A8A),
+                                  ),
+                                  child: const Text('Retry'),
+                                ),
+                              ],
+                            ),
+                          )
+                        : _buildStudentsList(),
+              ),
+            ],
+          ),
+        ),
       ),
-      body: Column(
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
         children: [
-          // Top search + chips
+          // ACLC Logo
+          SizedBox(
+            width: 50,
+            height: 50,
+            child: Image.asset(
+              'assets/acla logo.png',
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.school,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                );
+              },
+            ),
+          ),
+          const Expanded(
+            child: Text(
+              'Students',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          IconButton(
+            onPressed: _loadStudents,
+            icon: const Icon(Icons.refresh, color: Colors.white, size: 28),
+            tooltip: 'Refresh',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchAndFilter() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: [
+          // Search Bar
           Container(
-            color: Colors.white,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            child: Column(
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
               children: [
-                Container(
-                  height: 44,
-                  decoration: BoxDecoration(color: const Color(0xFFF2F4F7), borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(children: [
-                    const Icon(Icons.search_rounded, color: Color(0xFF667085)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (_) => setState(() {}),
-                        decoration: const InputDecoration(hintText: 'Search students...', isCollapsed: true, border: InputBorder.none),
-                      ),
-                    )
-                  ]),
+                const Icon(Icons.search, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      hintText: 'Search students...',
+                      hintStyle: TextStyle(color: Colors.white70),
+                      isCollapsed: true,
+                      border: InputBorder.none,
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 8),
-                _buildStatusFilter(),
-                const SizedBox(height: 8),
-                ValueListenableBuilder<List<Map<String, String>>>(
-                  valueListenable: AppData.students,
-                  builder: (context, students, child) {
-                    return Row(children: [
-                      _statChip(Icons.people_alt_rounded, '${students.length} Total'),
-                      const SizedBox(width: 8),
-                      _statChip(Icons.check_circle_rounded, '${students.where((t) => t['status'] == 'Active').length} Active'),
-                    ]);
-                  },
-                )
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          // Status Filter
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: DropdownButton<String>(
+              value: _selectedStatusFilter,
+              isExpanded: true,
+              underline: const SizedBox(),
+              dropdownColor: const Color(0xFF1E3A8A),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+              items: const [
+                DropdownMenuItem(value: 'All', child: Text('All Students')),
+                DropdownMenuItem(value: 'Active', child: Text('Active')),
+                DropdownMenuItem(value: 'Deleted', child: Text('Deleted')),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedStatusFilter = value ?? 'All';
+                });
+              },
+              icon: const Icon(Icons.filter_list, color: Colors.white),
+            ),
+          ),
+          const SizedBox(height: 8),
+          
+          // Stats
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatChip(
+                  Icons.people,
+                  '$_totalCount Total',
+                  Colors.white,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildStatChip(
+                  Icons.check_circle,
+                  '$_activeCount Active',
+                  Colors.green,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildStatChip(
+                  Icons.delete_outline,
+                  '$_deletedCount Deleted',
+                  Colors.red,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatChip(IconData icon, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStudentsList() {
+    if (_filteredStudents.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.school_outlined,
+              size: 80,
+              color: Colors.white.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No students found',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _searchController.text.isNotEmpty
+                  ? 'Try adjusting your search'
+                  : 'Students will appear here',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _filteredStudents.length,
+      itemBuilder: (context, index) {
+        final student = _filteredStudents[index];
+        return _buildStudentCard(student);
+      },
+    );
+  }
+
+  Widget _buildStudentCard(Map<String, dynamic> student) {
+    final studentName = _getStudentName(student);
+    final studentId = student['id'];
+    final isDeleted = student['isDeleted'] == true;
+    final isRegular = student['isRegular'] == true;
+    final sectionId = student['sectionId'];
+    final userId = student['userId'];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Student Icon
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDeleted
+                    ? [Colors.grey[400]!, Colors.grey[600]!]
+                    : [const Color(0xFF10B981), const Color(0xFF34D399)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isDeleted ? Icons.person_off : Icons.school,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          
+          // Student Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        studentName,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDeleted ? Colors.grey[600] : const Color(0xFF1E3A8A),
+                          decoration: isDeleted ? TextDecoration.lineThrough : null,
+                        ),
+                      ),
+                    ),
+                    if (isRegular)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Regular',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                if (sectionId != null)
+                  Row(
+                    children: [
+                      Icon(Icons.class_, size: 12, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Section: $sectionId',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                if (userId != null) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Icon(Icons.person, size: 12, color: Colors.grey[500]),
+                      const SizedBox(width: 4),
+                      Text(
+                        'User ID: $userId',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
           
-          // Students List
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Actions
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            color: Colors.white,
+            onSelected: (value) {
+              switch (value) {
+                case 'edit':
+                  _showEditStudentDialog(student);
+                  break;
+                case 'soft_delete':
+                  _softDeleteStudent(studentId);
+                  break;
+                case 'restore':
+                  _restoreStudent(studentId);
+                  break;
+                case 'delete':
+                  _deleteStudent(studentId);
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              if (!isDeleted) ...[
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
                     children: [
-                      const Text(
-                        'Students List',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      const SizedBox.shrink(),
+                      Icon(Icons.edit, size: 18, color: Colors.blue),
+                      SizedBox(width: 8),
+                      Text('Edit'),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: ValueListenableBuilder<List<Map<String, String>>>(
-                      valueListenable: AppData.students,
-                      builder: (context, students, child) {
-                        return ListView.builder(
-                          itemCount: _filteredStudents.length,
-                          itemBuilder: (context, index) {
-                            final student = _filteredStudents[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Colors.green.withOpacity(0.1),
-                                  child: const Icon(Icons.school, color: Colors.green),
-                                ),
-                                title: Text(
-                                  student['name']!,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(student['email']!),
-                                    Text(
-                                      'Grade: ${student['grade']}',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.more_vert_rounded),
-                                  onPressed: () => _showStudentActions(student),
-                                ),
-                                onTap: () => _showStudentActions(student),
-                                onLongPress: () {
-                                  _showRemoveStudentDialog(students.indexOf(student));
-                                },
-                              ),
-                            );
-                          },
-                        );
-                      },
+                ),
+                const PopupMenuItem(
+                  value: 'soft_delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline, size: 18, color: Colors.orange),
+                      SizedBox(width: 8),
+                      Text('Soft Delete'),
+                    ],
+                  ),
+                ),
+              ],
+              if (isDeleted)
+                const PopupMenuItem(
+                  value: 'restore',
+                  child: Row(
+                    children: [
+                      Icon(Icons.restore, size: 18, color: Colors.green),
+                      SizedBox(width: 8),
+                      Text('Restore'),
+                    ],
+                  ),
+                ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_forever, size: 18, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Hard Delete'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditStudentDialog(Map<String, dynamic> student) {
+    final firstnameController = TextEditingController(
+      text: student['firstname']?.toString() ?? '',
+    );
+    final lastnameController = TextEditingController(
+      text: student['lastname']?.toString() ?? '',
+    );
+    bool isRegular = student['isRegular'] ?? false;
+    final studentId = student['id'] as int;
+    final formKey = GlobalKey<FormState>();
+    bool isUpdating = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit Student'),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: firstnameController,
+                    decoration: const InputDecoration(
+                      labelText: 'First Name',
+                      border: OutlineInputBorder(),
                     ),
+                    validator: (value) {
+                      if (value != null && value.length > 100) {
+                        return 'First name must be 100 characters or less';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: lastnameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Last Name',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value != null && value.length > 100) {
+                        return 'Last name must be 100 characters or less';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  CheckboxListTile(
+                    title: const Text('Regular Student'),
+                    value: isRegular,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        isRegular = value ?? false;
+                      });
+                    },
                   ),
                 ],
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
+          actions: [
+            TextButton(
+              onPressed: isUpdating ? null : () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: isUpdating ? null : () async {
+                if (formKey.currentState!.validate()) {
+                  setDialogState(() {
+                    isUpdating = true;
+                  });
 
-  Widget _statChip(IconData icon, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE4E7EC)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: const Color(0xFF344054)),
-          const SizedBox(width: 6),
-          Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
+                  final response = await _apiService.updateStudent(
+                    id: studentId,
+                    firstname: firstnameController.text.trim().isEmpty
+                        ? null
+                        : firstnameController.text.trim(),
+                    lastname: lastnameController.text.trim().isEmpty
+                        ? null
+                        : lastnameController.text.trim(),
+                    isRegular: isRegular,
+                  );
 
-  Widget _buildStatusFilter() {
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE4E7EC)),
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _selectedStatusFilter,
-          isExpanded: true,
-          icon: const Icon(Icons.arrow_drop_down),
-          items: _statusOptions.map((status) => DropdownMenuItem(value: status, child: Text(status))).toList(),
-          onChanged: (val) => setState(() => _selectedStatusFilter = val ?? 'All Status'),
+                  setDialogState(() {
+                    isUpdating = false;
+                  });
+
+                  if (response['success'] == true) {
+                    if (mounted) {
+                      Navigator.of(context).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(response['message'] ?? 'Student updated successfully'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                      _loadStudents();
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(response['message'] ?? 'Failed to update student'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: isUpdating
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Update'),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _showStudentActions(Map<String, String> student) {
-    showModalBottomSheet(
+  Future<void> _softDeleteStudent(int studentId) async {
+    final confirmed = await showDialog<bool>(
       context: context,
-      showDragHandle: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (_) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          
-          ListTile(
-            leading: const Icon(Icons.delete_outline, color: Colors.red),
-            title: const Text('Delete'),
-            onTap: () {
-              Navigator.pop(context);
-              _showRemoveStudentDialog(_students.indexOf(student));
-            },
+      builder: (context) => AlertDialog(
+        title: const Text('Soft Delete Student'),
+        content: const Text('Are you sure you want to soft delete this student? They can be restored later.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
           ),
-          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('Soft Delete'),
+          ),
         ],
       ),
     );
+
+    if (confirmed == true) {
+      final response = await _apiService.softDeleteStudent(studentId);
+      
+      if (response['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Student soft deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _loadStudents();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to soft delete student'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _restoreStudent(int studentId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Restore Student'),
+        content: const Text('Are you sure you want to restore this student?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.green),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final response = await _apiService.restoreStudent(studentId);
+      
+      if (response['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Student restored successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _loadStudents();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to restore student'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteStudent(int studentId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hard Delete Student'),
+        content: const Text(
+          'Are you sure you want to permanently delete this student? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final response = await _apiService.deleteStudent(studentId);
+      
+      if (response['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Student deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        _loadStudents();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to delete student'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
-

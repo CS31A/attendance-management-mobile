@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../services/api_service.dart';
 import 'filtered_users_screen.dart';
 import 'add_user_screen.dart' show showAddUserModal;
+import 'students_management_screen.dart';
 
 class UsersManagementScreen extends StatefulWidget {
   final VoidCallback? onBackPressed;
@@ -225,7 +226,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                                               children: [
                                                 Expanded(
                                                   child: GestureDetector(
-                                                    onTap: () => _navigateToFilteredUsers('Student'),
+                                                    onTap: () => _navigateToStudentsManagement(),
                                                     child: _buildUserCategoryCard(
                                                       label: 'Students',
                                                       count: _studentsCount,
@@ -293,6 +294,14 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           users: _users,
           role: role,
         ),
+      ),
+    );
+  }
+
+  void _navigateToStudentsManagement() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const StudentsManagementScreen(),
       ),
     );
   }
