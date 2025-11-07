@@ -80,8 +80,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               // ACLC Logo
               SizedBox(
-                width: 80,
-                height: 80,
+                width: 50,
+                height: 50,
                 child: Image.asset(
                   'assets/acla logo.png',
                   fit: BoxFit.contain,
@@ -94,7 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: const Icon(
                         Icons.school,
                         color: Colors.white,
-                        size: 50,
+                        size: 30,
                       ),
                     );
                   },
