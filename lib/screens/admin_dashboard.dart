@@ -6,6 +6,7 @@ import 'users_management_screen.dart';
 import 'reports_screen.dart';
 import 'profile_screen.dart';
 import 'classes_screen.dart';
+import 'enrollment_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -122,12 +123,14 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       case 0:
         return _buildDashboardContent();
       case 1:
-        return const ClassesScreen();
+        return const EnrollmentScreen();
       case 2:
+        return const ClassesScreen();
+      case 3:
         return UsersManagementScreen(
           onBackPressed: _navigateToDashboard,
         );
-      case 3:
+      case 4:
         return const ProfileScreen();
       default:
         return _buildDashboardContent();
@@ -787,6 +790,10 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
               BottomNavigationBarItem(
                 icon: Icon(Icons.dashboard),
                 label: 'Dashboard',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.assignment),
+                label: 'Enrollment',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.class_),

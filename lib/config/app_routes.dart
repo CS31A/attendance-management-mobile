@@ -9,6 +9,7 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String classes = '/classes';
   static const String users = '/users';
+  static const String enrollment = '/enrollment';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
