@@ -30,11 +30,16 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
   List<Map<String, dynamic>> _sections = [];
   bool _isLoadingSections = false;
   String? _sectionsErrorMessage;
+  
+  // Subjects
+  List<Map<String, dynamic>> _subjects = [];
+  bool _isLoadingSubjects = false;
+  String? _subjectsErrorMessage;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         if (_tabController.index == 0 && _classrooms.isEmpty && !_isLoadingClassrooms) {
@@ -43,6 +48,8 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
           _loadCourses();
         } else if (_tabController.index == 2 && _sections.isEmpty && !_isLoadingSections) {
           _loadSections();
+        } else if (_tabController.index == 3 && _subjects.isEmpty && !_isLoadingSubjects) {
+          _loadSubjects();
         }
       }
     });
@@ -128,6 +135,42 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
   int get _totalClassesCount => _classrooms.length;
   int get _totalCoursesCount => _courses.length;
   int get _totalSectionsCount => _sections.length;
+  int get _totalSubjectsCount => _subjects.length;
+
+  Future<void> _loadSubjects() async {
+    setState(() {
+      _isLoadingSubjects = true;
+      _subjectsErrorMessage = null;
+    });
+
+    try {
+      final response = await _apiService.getSubjects();
+      if (response['success'] == true) {
+        final data = response['data'];
+        if (data is List) {
+          setState(() {
+            _subjects = List<Map<String, dynamic>>.from(data);
+            _isLoadingSubjects = false;
+          });
+        } else {
+          setState(() {
+            _subjects = [];
+            _isLoadingSubjects = false;
+          });
+        }
+      } else {
+        setState(() {
+          _subjectsErrorMessage = response['message'] ?? 'Failed to load subjects';
+          _isLoadingSubjects = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _subjectsErrorMessage = 'Failed to load subjects: $e';
+        _isLoadingSubjects = false;
+      });
+    }
+  }
 
   Future<void> _loadSections() async {
     setState(() {
@@ -221,6 +264,15 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                         : _sectionsErrorMessage != null
                             ? _buildErrorState(_sectionsErrorMessage!, _loadSections)
                             : _buildSectionsContent(),
+                    
+                    // Subjects Tab
+                    _isLoadingSubjects
+                        ? const Center(
+                            child: CircularProgressIndicator(color: Colors.white),
+                          )
+                        : _subjectsErrorMessage != null
+                            ? _buildErrorState(_subjectsErrorMessage!, _loadSubjects)
+                            : _buildSubjectsContent(),
                   ],
                 ),
               ),
@@ -284,8 +336,10 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                 _showAddClassroomModal();
               } else if (_tabController.index == 1) {
                 _showAddCourseModal();
-              } else {
+              } else if (_tabController.index == 2) {
                 _showAddSectionModal();
+              } else {
+                _showAddSubjectModal();
               }
             },
             icon: const Icon(Icons.add, color: Colors.white, size: 28),
@@ -304,12 +358,16 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
       ),
       child: TabBar(
         controller: _tabController,
-        indicator: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+        indicator: const UnderlineTabIndicator(
+          borderSide: BorderSide(
+            width: 3,
+            color: Colors.white,
+          ),
+          insets: EdgeInsets.symmetric(horizontal: 16),
         ),
-        labelColor: const Color(0xFF3B82F6),
-        unselectedLabelColor: Colors.white,
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.white.withOpacity(0.7),
         labelStyle: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
@@ -322,6 +380,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
           Tab(text: 'Classrooms'),
           Tab(text: 'Courses'),
           Tab(text: 'Sections'),
+          Tab(text: 'Subjects'),
         ],
       ),
     );
@@ -1640,6 +1699,461 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(response['message'] ?? 'Failed to delete section'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Subjects Content
+  Widget _buildSubjectsContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Subjects Overview
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Row(
+              children: [
+                const Text(
+                  'Subjects Overview',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Stats Grid
+          _buildSubjectsStatsGrid(),
+          
+          const SizedBox(height: 24),
+          
+          // Subjects List Section
+          const Text(
+            'Subjects List',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Subjects Cards
+          _buildSubjectsList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubjectsStatsGrid() {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 1.2,
+      children: [
+        _buildStatCard(
+          title: 'Total Subjects',
+          value: _totalSubjectsCount.toString(),
+          progress: _totalSubjectsCount > 0 ? 1.0 : 0.0,
+          gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
+          icon: Icons.subject,
+        ),
+        _buildStatCard(
+          title: 'Active Subjects',
+          value: _totalSubjectsCount.toString(),
+          progress: _totalSubjectsCount > 0 ? 1.0 : 0.0,
+          gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
+          icon: Icons.menu_book,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubjectsList() {
+    if (_subjects.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.subject_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No subjects available',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add a new subject to get started',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _subjects.length,
+      itemBuilder: (context, index) {
+        final subject = _subjects[index];
+        return _buildSubjectCard(subject);
+      },
+    );
+  }
+
+  Widget _buildSubjectCard(Map<String, dynamic> subject) {
+    final id = subject['id']?.toString() ?? 'N/A';
+    final name = subject['name']?.toString() ?? 'Unnamed';
+    final code = subject['code']?.toString() ?? 'N/A';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Subject Icon
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF3B82F6),
+                  Color(0xFF60A5FA),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.subject,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Subject Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E3A8A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'ID: $id • Code: $code',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Action Buttons
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                onPressed: () => _showEditSubjectModal(subject),
+                icon: const Icon(Icons.edit, color: Color(0xFF3B82F6)),
+                tooltip: 'Edit',
+              ),
+              IconButton(
+                onPressed: () => _showDeleteSubjectConfirmation(subject),
+                icon: const Icon(Icons.delete, color: Colors.red),
+                tooltip: 'Delete',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Subjects Modals
+  void _showAddSubjectModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+          ),
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF3B82F6),
+                Color(0xFF60A5FA),
+              ],
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: _AddSubjectModalContent(
+            onSubjectCreated: () => _loadSubjects(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditSubjectModal(Map<String, dynamic> subject) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+          ),
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF3B82F6),
+                Color(0xFF60A5FA),
+              ],
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: _EditSubjectModalContent(
+            subject: subject,
+            onSubjectUpdated: () => _loadSubjects(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteSubjectConfirmation(Map<String, dynamic> subject) {
+    final name = subject['name']?.toString() ?? 'this subject';
+    
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF3B82F6),
+                Color(0xFF60A5FA),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 30,
+                offset: const Offset(0, 15),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ACLC Logo
+              SizedBox(
+                width: 50,
+                height: 50,
+                child: Image.asset(
+                  'assets/acla logo.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.school,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Delete Subject',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Are you sure you want to delete "$name"? This action cannot be undone.',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white, width: 2),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        await _handleDeleteSubject(subject);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Delete',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleDeleteSubject(Map<String, dynamic> subject) async {
+    final id = subject['id'];
+    if (id == null) return;
+
+    try {
+      final response = await _apiService.deleteSubject(id as int);
+      if (response['success'] == true) {
+        if (mounted) {
+          _showSuccessModal('Subject deleted successfully');
+          _loadSubjects();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? 'Failed to delete subject'),
               backgroundColor: Colors.red,
             ),
           );
@@ -3205,6 +3719,475 @@ class _EditSectionModalContentState extends State<_EditSectionModalContent> {
                       )
                     : const Text(
                         'Update Section',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Add Subject Modal
+class _AddSubjectModalContent extends StatefulWidget {
+  final VoidCallback? onSubjectCreated;
+  
+  const _AddSubjectModalContent({
+    this.onSubjectCreated,
+  });
+
+  @override
+  State<_AddSubjectModalContent> createState() => _AddSubjectModalContentState();
+}
+
+class _AddSubjectModalContentState extends State<_AddSubjectModalContent> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final ApiService _apiService = ApiService();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _codeController = TextEditingController();
+  bool _isCreating = false;
+  Map<String, String?> _fieldErrors = {};
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleCreate() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isCreating = true;
+      _fieldErrors = {};
+    });
+
+    final response = await _apiService.createSubject(
+      _nameController.text.trim(),
+      _codeController.text.trim(),
+    );
+
+    setState(() {
+      _isCreating = false;
+    });
+
+    if (response['success'] == true) {
+      if (mounted) {
+        widget.onSubjectCreated?.call();
+        Navigator.of(context).pop();
+      }
+    } else {
+      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
+      
+      setState(() {
+        _fieldErrors = {};
+        if (apiErrors != null) {
+          if (apiErrors.containsKey('Name')) {
+            _fieldErrors['name'] = apiErrors['Name']!.first;
+          }
+          if (apiErrors.containsKey('Code')) {
+            _fieldErrors['code'] = apiErrors['Code']!.first;
+          }
+        }
+      });
+      
+      _formKey.currentState?.validate();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to create subject'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Add Subject',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              
+              // Name Field
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Subject Name',
+                  hintText: 'Enter subject name',
+                  prefixIcon: const Icon(Icons.subject, color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white, width: 2),
+                  ),
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  errorText: _fieldErrors['name'],
+                ),
+                style: const TextStyle(color: Colors.white),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Subject name is required';
+                  }
+                  if (value.trim().length < 2) {
+                    return 'Subject name must be at least 2 characters';
+                  }
+                  if (value.trim().length > 100) {
+                    return 'Subject name must be at most 100 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // Code Field
+              TextFormField(
+                controller: _codeController,
+                decoration: InputDecoration(
+                  labelText: 'Subject Code',
+                  hintText: 'Enter subject code',
+                  prefixIcon: const Icon(Icons.code, color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white, width: 2),
+                  ),
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  errorText: _fieldErrors['code'],
+                ),
+                style: const TextStyle(color: Colors.white),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Subject code is required';
+                  }
+                  if (value.trim().length < 5) {
+                    return 'Subject code must be at least 5 characters';
+                  }
+                  if (value.trim().length > 30) {
+                    return 'Subject code must be at most 30 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 32),
+              
+              // Create Button
+              ElevatedButton(
+                onPressed: _isCreating ? null : _handleCreate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF3B82F6),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isCreating
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                        ),
+                      )
+                    : const Text(
+                        'Create Subject',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Edit Subject Modal
+class _EditSubjectModalContent extends StatefulWidget {
+  final Map<String, dynamic> subject;
+  final VoidCallback? onSubjectUpdated;
+  
+  const _EditSubjectModalContent({
+    required this.subject,
+    this.onSubjectUpdated,
+  });
+
+  @override
+  State<_EditSubjectModalContent> createState() => _EditSubjectModalContentState();
+}
+
+class _EditSubjectModalContentState extends State<_EditSubjectModalContent> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final ApiService _apiService = ApiService();
+  late final TextEditingController _nameController;
+  late final TextEditingController _codeController;
+  bool _isUpdating = false;
+  Map<String, String?> _fieldErrors = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.subject['name']?.toString() ?? '');
+    _codeController = TextEditingController(text: widget.subject['code']?.toString() ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleUpdate() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isUpdating = true;
+      _fieldErrors = {};
+    });
+
+    final id = widget.subject['id'] as int;
+    final response = await _apiService.updateSubject(
+      id,
+      _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : null,
+      _codeController.text.trim().isNotEmpty ? _codeController.text.trim() : null,
+    );
+
+    setState(() {
+      _isUpdating = false;
+    });
+
+    if (response['success'] == true) {
+      if (mounted) {
+        widget.onSubjectUpdated?.call();
+        Navigator.of(context).pop();
+      }
+    } else {
+      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
+      
+      setState(() {
+        _fieldErrors = {};
+        if (apiErrors != null) {
+          if (apiErrors.containsKey('Name')) {
+            _fieldErrors['name'] = apiErrors['Name']!.first;
+          }
+          if (apiErrors.containsKey('Code')) {
+            _fieldErrors['code'] = apiErrors['Code']!.first;
+          }
+        }
+      });
+      
+      _formKey.currentState?.validate();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to update subject'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Edit Subject',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              
+              // Name Field
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Subject Name',
+                  hintText: 'Enter subject name',
+                  prefixIcon: const Icon(Icons.subject, color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white, width: 2),
+                  ),
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  errorText: _fieldErrors['name'],
+                ),
+                style: const TextStyle(color: Colors.white),
+                validator: (value) {
+                  if (value != null && value.trim().isNotEmpty) {
+                    if (value.trim().length < 2) {
+                      return 'Subject name must be at least 2 characters';
+                    }
+                    if (value.trim().length > 100) {
+                      return 'Subject name must be at most 100 characters';
+                    }
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // Code Field
+              TextFormField(
+                controller: _codeController,
+                decoration: InputDecoration(
+                  labelText: 'Subject Code',
+                  hintText: 'Enter subject code',
+                  prefixIcon: const Icon(Icons.code, color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white, width: 2),
+                  ),
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  errorText: _fieldErrors['code'],
+                ),
+                style: const TextStyle(color: Colors.white),
+                validator: (value) {
+                  if (value != null && value.trim().isNotEmpty) {
+                    if (value.trim().length < 5) {
+                      return 'Subject code must be at least 5 characters';
+                    }
+                    if (value.trim().length > 30) {
+                      return 'Subject code must be at most 30 characters';
+                    }
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 32),
+              
+              // Update Button
+              ElevatedButton(
+                onPressed: _isUpdating ? null : _handleUpdate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF3B82F6),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isUpdating
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                        ),
+                      )
+                    : const Text(
+                        'Update Subject',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

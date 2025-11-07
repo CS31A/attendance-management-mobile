@@ -1601,5 +1601,280 @@ class ApiService {
       };
     }
   }
+
+  // Get all subjects
+  Future<Map<String, dynamic>> getSubjects() async {
+    try {
+      final url = Uri.parse('$baseUrl/api/subjects');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching subjects: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+          'data': [],
+        };
+      }
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        List<Map<String, dynamic>> subjects = [];
+        if (responseData is List) {
+          subjects = List<Map<String, dynamic>>.from(responseData);
+        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+          subjects = List<Map<String, dynamic>>.from(responseData['data']);
+        }
+
+        return {
+          'success': true,
+          'data': subjects,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch subjects',
+          'data': [],
+        };
+      }
+    } catch (e) {
+      print('❌ Get subjects error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+        'data': [],
+      };
+    }
+  }
+
+  // Get subject by ID
+  Future<Map<String, dynamic>> getSubjectById(int id) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/subjects/$id');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching subject: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': responseData,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to fetch subject',
+        };
+      }
+    } catch (e) {
+      print('❌ Get subject error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Create subject
+  Future<Map<String, dynamic>> createSubject(String name, String code) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/subjects');
+      final headers = await _getHeaders();
+
+      final body = {
+        'name': name,
+        'code': code,
+      };
+
+      print('📤 Creating subject: $url');
+      print('📦 Request body: $body');
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Subject created successfully',
+          'data': responseData,
+        };
+      } else {
+        String errorMessage = responseData['message']?.toString() ?? 'Failed to create subject';
+        Map<String, List<String>>? fieldErrors;
+
+        if (responseData.containsKey('errors')) {
+          final errors = responseData['errors'] as Map<String, dynamic>;
+          fieldErrors = {};
+          final errorList = <String>[];
+
+          errors.forEach((key, value) {
+            if (value is List) {
+              final msgs = value.map((e) => e.toString()).toList();
+              fieldErrors![key] = msgs;
+              errorList.addAll(msgs);
+            }
+          });
+
+          if (errorList.isNotEmpty) {
+            errorMessage = errorList.join(', ');
+          }
+        }
+
+        return {
+          'success': false,
+          'message': errorMessage,
+          'errors': fieldErrors,
+        };
+      }
+    } catch (e) {
+      print('❌ Create subject error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Update subject
+  Future<Map<String, dynamic>> updateSubject(int id, String? name, String? code) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/subjects/$id');
+      final headers = await _getHeaders();
+
+      final body = <String, dynamic>{};
+      if (name != null) body['name'] = name;
+      if (code != null) body['code'] = code;
+
+      print('📤 Updating subject: $url');
+      print('📦 Request body: $body');
+
+      final response = await http.patch(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Subject updated successfully',
+          'data': responseData,
+        };
+      } else {
+        String errorMessage = responseData['message']?.toString() ?? 'Failed to update subject';
+        Map<String, List<String>>? fieldErrors;
+
+        if (responseData.containsKey('errors')) {
+          final errors = responseData['errors'] as Map<String, dynamic>;
+          fieldErrors = {};
+          final errorList = <String>[];
+
+          errors.forEach((key, value) {
+            if (value is List) {
+              final msgs = value.map((e) => e.toString()).toList();
+              fieldErrors![key] = msgs;
+              errorList.addAll(msgs);
+            }
+          });
+
+          if (errorList.isNotEmpty) {
+            errorMessage = errorList.join(', ');
+          }
+        }
+
+        return {
+          'success': false,
+          'message': errorMessage,
+          'errors': fieldErrors,
+        };
+      }
+    } catch (e) {
+      print('❌ Update subject error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Delete subject
+  Future<Map<String, dynamic>> deleteSubject(int id) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/subjects/$id');
+      final headers = await _getHeaders();
+
+      print('📤 Deleting subject: $url');
+
+      final response = await http.delete(url, headers: headers);
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return {
+          'success': true,
+          'message': 'Subject deleted successfully',
+        };
+      } else {
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body) as Map<String, dynamic>
+            : <String, dynamic>{};
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to delete subject',
+        };
+      }
+    } catch (e) {
+      print('❌ Delete subject error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
 }
 
