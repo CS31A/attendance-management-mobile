@@ -1226,5 +1226,380 @@ class ApiService {
       };
     }
   }
+
+  // Get all sections
+  Future<Map<String, dynamic>> getSections() async {
+    try {
+      final url = Uri.parse('$baseUrl/api/sections');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching sections: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+          'data': [],
+        };
+      }
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        List<Map<String, dynamic>> sections = [];
+        if (responseData is List) {
+          sections = List<Map<String, dynamic>>.from(responseData);
+        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+          sections = List<Map<String, dynamic>>.from(responseData['data']);
+        }
+
+        return {
+          'success': true,
+          'data': sections,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch sections',
+          'data': [],
+        };
+      }
+    } catch (e) {
+      print('❌ Get sections error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+        'data': [],
+      };
+    }
+  }
+
+  // Get section by ID
+  Future<Map<String, dynamic>> getSectionById(int id) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/sections/$id');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching section: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': responseData,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to fetch section',
+        };
+      }
+    } catch (e) {
+      print('❌ Get section error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Create section
+  Future<Map<String, dynamic>> createSection(String name, int courseId) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/sections');
+      final headers = await _getHeaders();
+
+      final body = {
+        'name': name,
+        'courseId': courseId,
+      };
+
+      print('📤 Creating section: $url');
+      print('📦 Request body: $body');
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Section created successfully',
+          'data': responseData,
+        };
+      } else {
+        String errorMessage = responseData['message']?.toString() ?? 'Failed to create section';
+        Map<String, List<String>>? fieldErrors;
+
+        if (responseData.containsKey('errors')) {
+          final errors = responseData['errors'] as Map<String, dynamic>;
+          fieldErrors = {};
+          final errorList = <String>[];
+
+          errors.forEach((key, value) {
+            if (value is List) {
+              final msgs = value.map((e) => e.toString()).toList();
+              fieldErrors![key] = msgs;
+              errorList.addAll(msgs);
+            }
+          });
+
+          if (errorList.isNotEmpty) {
+            errorMessage = errorList.join(', ');
+          }
+        }
+
+        return {
+          'success': false,
+          'message': errorMessage,
+          'errors': fieldErrors,
+        };
+      }
+    } catch (e) {
+      print('❌ Create section error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Update section
+  Future<Map<String, dynamic>> updateSection(int id, String? name, int? courseId) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/sections/$id');
+      final headers = await _getHeaders();
+
+      final body = <String, dynamic>{};
+      if (name != null) body['name'] = name;
+      if (courseId != null) body['courseId'] = courseId;
+
+      print('📤 Updating section: $url');
+      print('📦 Request body: $body');
+
+      final response = await http.put(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Section updated successfully',
+          'data': responseData,
+        };
+      } else {
+        String errorMessage = responseData['message']?.toString() ?? 'Failed to update section';
+        Map<String, List<String>>? fieldErrors;
+
+        if (responseData.containsKey('errors')) {
+          final errors = responseData['errors'] as Map<String, dynamic>;
+          fieldErrors = {};
+          final errorList = <String>[];
+
+          errors.forEach((key, value) {
+            if (value is List) {
+              final msgs = value.map((e) => e.toString()).toList();
+              fieldErrors![key] = msgs;
+              errorList.addAll(msgs);
+            }
+          });
+
+          if (errorList.isNotEmpty) {
+            errorMessage = errorList.join(', ');
+          }
+        }
+
+        return {
+          'success': false,
+          'message': errorMessage,
+          'errors': fieldErrors,
+        };
+      }
+    } catch (e) {
+      print('❌ Update section error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Delete section
+  Future<Map<String, dynamic>> deleteSection(int id) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/sections/$id');
+      final headers = await _getHeaders();
+
+      print('📤 Deleting section: $url');
+
+      final response = await http.delete(url, headers: headers);
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return {
+          'success': true,
+          'message': 'Section deleted successfully',
+        };
+      } else {
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body) as Map<String, dynamic>
+            : <String, dynamic>{};
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to delete section',
+        };
+      }
+    } catch (e) {
+      print('❌ Delete section error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Get active students in a section
+  Future<Map<String, dynamic>> getSectionActiveStudents(int sectionId) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/sections/$sectionId/active-students');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching active students for section: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+          'data': [],
+        };
+      }
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        List<Map<String, dynamic>> students = [];
+        if (responseData is List) {
+          students = List<Map<String, dynamic>>.from(responseData);
+        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+          students = List<Map<String, dynamic>>.from(responseData['data']);
+        }
+
+        return {
+          'success': true,
+          'data': students,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch active students',
+          'data': [],
+        };
+      }
+    } catch (e) {
+      print('❌ Get section active students error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+        'data': [],
+      };
+    }
+  }
+
+  // Get all students in a section
+  Future<Map<String, dynamic>> getSectionAllStudents(int sectionId) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/sections/$sectionId/all-students');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching all students for section: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+          'data': [],
+        };
+      }
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        List<Map<String, dynamic>> students = [];
+        if (responseData is List) {
+          students = List<Map<String, dynamic>>.from(responseData);
+        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+          students = List<Map<String, dynamic>>.from(responseData['data']);
+        }
+
+        return {
+          'success': true,
+          'data': students,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch all students',
+          'data': [],
+        };
+      }
+    } catch (e) {
+      print('❌ Get section all students error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+        'data': [],
+      };
+    }
+  }
 }
 

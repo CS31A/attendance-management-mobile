@@ -25,17 +25,24 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
   List<Map<String, dynamic>> _courses = [];
   bool _isLoadingCourses = false;
   String? _coursesErrorMessage;
+  
+  // Sections
+  List<Map<String, dynamic>> _sections = [];
+  bool _isLoadingSections = false;
+  String? _sectionsErrorMessage;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         if (_tabController.index == 0 && _classrooms.isEmpty && !_isLoadingClassrooms) {
           _loadClassrooms();
         } else if (_tabController.index == 1 && _courses.isEmpty && !_isLoadingCourses) {
           _loadCourses();
+        } else if (_tabController.index == 2 && _sections.isEmpty && !_isLoadingSections) {
+          _loadSections();
         }
       }
     });
@@ -120,6 +127,42 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
 
   int get _totalClassesCount => _classrooms.length;
   int get _totalCoursesCount => _courses.length;
+  int get _totalSectionsCount => _sections.length;
+
+  Future<void> _loadSections() async {
+    setState(() {
+      _isLoadingSections = true;
+      _sectionsErrorMessage = null;
+    });
+
+    try {
+      final response = await _apiService.getSections();
+      if (response['success'] == true) {
+        final data = response['data'];
+        if (data is List) {
+          setState(() {
+            _sections = List<Map<String, dynamic>>.from(data);
+            _isLoadingSections = false;
+          });
+        } else {
+          setState(() {
+            _sections = [];
+            _isLoadingSections = false;
+          });
+        }
+      } else {
+        setState(() {
+          _sectionsErrorMessage = response['message'] ?? 'Failed to load sections';
+          _isLoadingSections = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _sectionsErrorMessage = 'Failed to load sections: $e';
+        _isLoadingSections = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,6 +212,15 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                         : _coursesErrorMessage != null
                             ? _buildErrorState(_coursesErrorMessage!, _loadCourses)
                             : _buildCoursesContent(),
+                    
+                    // Sections Tab
+                    _isLoadingSections
+                        ? const Center(
+                            child: CircularProgressIndicator(color: Colors.white),
+                          )
+                        : _sectionsErrorMessage != null
+                            ? _buildErrorState(_sectionsErrorMessage!, _loadSections)
+                            : _buildSectionsContent(),
                   ],
                 ),
               ),
@@ -230,8 +282,10 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
             onPressed: () {
               if (_tabController.index == 0) {
                 _showAddClassroomModal();
-              } else {
+              } else if (_tabController.index == 1) {
                 _showAddCourseModal();
+              } else {
+                _showAddSectionModal();
               }
             },
             icon: const Icon(Icons.add, color: Colors.white, size: 28),
@@ -267,6 +321,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
         tabs: const [
           Tab(text: 'Classrooms'),
           Tab(text: 'Courses'),
+          Tab(text: 'Sections'),
         ],
       ),
     );
@@ -1098,6 +1153,493 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(response['message'] ?? 'Failed to delete classroom'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Sections Content
+  Widget _buildSectionsContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Sections Overview
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Row(
+              children: [
+                const Text(
+                  'Sections Overview',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Stats Grid
+          _buildSectionsStatsGrid(),
+          
+          const SizedBox(height: 24),
+          
+          // Sections List Section
+          const Text(
+            'Sections List',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Sections Cards
+          _buildSectionsList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionsStatsGrid() {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 1.2,
+      children: [
+        _buildStatCard(
+          title: 'Total Sections',
+          value: _totalSectionsCount.toString(),
+          progress: _totalSectionsCount > 0 ? 1.0 : 0.0,
+          gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
+          icon: Icons.view_list,
+        ),
+        _buildStatCard(
+          title: 'Active Sections',
+          value: _totalSectionsCount.toString(),
+          progress: _totalSectionsCount > 0 ? 1.0 : 0.0,
+          gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
+          icon: Icons.list_alt,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionsList() {
+    if (_sections.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.view_list_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No sections available',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add a new section to get started',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _sections.length,
+      itemBuilder: (context, index) {
+        final section = _sections[index];
+        return _buildSectionCard(section);
+      },
+    );
+  }
+
+  Widget _buildSectionCard(Map<String, dynamic> section) {
+    final id = section['id']?.toString() ?? 'N/A';
+    final name = section['name']?.toString() ?? 'Unnamed';
+    final courseId = section['courseId']?.toString() ?? 'N/A';
+    
+    // Find course name
+    String courseName = 'Course ID: $courseId';
+    final course = _courses.firstWhere(
+      (c) => c['id'] == section['courseId'],
+      orElse: () => {},
+    );
+    if (course.isNotEmpty && course['name'] != null) {
+      courseName = course['name'].toString();
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Section Icon
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF3B82F6),
+                  Color(0xFF60A5FA),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.view_list,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Section Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E3A8A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'ID: $id • Course: $courseName',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Action Buttons
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                onPressed: () => _showEditSectionModal(section),
+                icon: const Icon(Icons.edit, color: Color(0xFF3B82F6)),
+                tooltip: 'Edit',
+              ),
+              IconButton(
+                onPressed: () => _showDeleteSectionConfirmation(section),
+                icon: const Icon(Icons.delete, color: Colors.red),
+                tooltip: 'Delete',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Sections Modals
+  void _showAddSectionModal() async {
+    // Ensure courses are loaded before showing modal
+    if (_courses.isEmpty && !_isLoadingCourses) {
+      await _loadCourses();
+    }
+    
+    if (_courses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please create a course first before adding sections'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+          ),
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF3B82F6),
+                Color(0xFF60A5FA),
+              ],
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: _AddSectionModalContent(
+            courses: _courses,
+            onSectionCreated: () => _loadSections(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditSectionModal(Map<String, dynamic> section) async {
+    // Ensure courses are loaded before showing modal
+    if (_courses.isEmpty && !_isLoadingCourses) {
+      await _loadCourses();
+    }
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+          ),
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF3B82F6),
+                Color(0xFF60A5FA),
+              ],
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: _EditSectionModalContent(
+            section: section,
+            courses: _courses,
+            onSectionUpdated: () => _loadSections(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteSectionConfirmation(Map<String, dynamic> section) {
+    final name = section['name']?.toString() ?? 'this section';
+    
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF3B82F6),
+                Color(0xFF60A5FA),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 30,
+                offset: const Offset(0, 15),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ACLC Logo
+              SizedBox(
+                width: 50,
+                height: 50,
+                child: Image.asset(
+                  'assets/acla logo.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.school,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Delete Section',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Are you sure you want to delete "$name"? This action cannot be undone.',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white, width: 2),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        await _handleDeleteSection(section);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Delete',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleDeleteSection(Map<String, dynamic> section) async {
+    final id = section['id'];
+    if (id == null) return;
+
+    try {
+      final response = await _apiService.deleteSection(id as int);
+      if (response['success'] == true) {
+        if (mounted) {
+          _showSuccessModal('Section deleted successfully');
+          _loadSections();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response['message'] ?? 'Failed to delete section'),
               backgroundColor: Colors.red,
             ),
           );
@@ -2169,6 +2711,500 @@ class _EditCourseModalContentState extends State<_EditCourseModalContent> {
                       )
                     : const Text(
                         'Update Course',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Add Section Modal
+class _AddSectionModalContent extends StatefulWidget {
+  final List<Map<String, dynamic>> courses;
+  final VoidCallback? onSectionCreated;
+  
+  const _AddSectionModalContent({
+    required this.courses,
+    this.onSectionCreated,
+  });
+
+  @override
+  State<_AddSectionModalContent> createState() => _AddSectionModalContentState();
+}
+
+class _AddSectionModalContentState extends State<_AddSectionModalContent> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final ApiService _apiService = ApiService();
+  final TextEditingController _nameController = TextEditingController();
+  int? _selectedCourseId;
+  bool _isCreating = false;
+  Map<String, String?> _fieldErrors = {};
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleCreate() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_selectedCourseId == null) {
+      setState(() {
+        _fieldErrors['courseId'] = 'Please select a course';
+      });
+      return;
+    }
+
+    setState(() {
+      _isCreating = true;
+      _fieldErrors = {};
+    });
+
+    final response = await _apiService.createSection(
+      _nameController.text.trim(),
+      _selectedCourseId!,
+    );
+
+    setState(() {
+      _isCreating = false;
+    });
+
+    if (response['success'] == true) {
+      if (mounted) {
+        widget.onSectionCreated?.call();
+        Navigator.of(context).pop();
+      }
+    } else {
+      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
+      
+      setState(() {
+        _fieldErrors = {};
+        if (apiErrors != null) {
+          if (apiErrors.containsKey('Name')) {
+            _fieldErrors['name'] = apiErrors['Name']!.first;
+          }
+          if (apiErrors.containsKey('CourseId')) {
+            _fieldErrors['courseId'] = apiErrors['CourseId']!.first;
+          }
+        }
+      });
+      
+      _formKey.currentState?.validate();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to create section'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Add Section',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              
+              // Course Dropdown
+              DropdownButtonFormField<int>(
+                value: _selectedCourseId,
+                decoration: InputDecoration(
+                  labelText: 'Course',
+                  hintText: 'Select a course',
+                  prefixIcon: const Icon(Icons.book, color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white, width: 2),
+                  ),
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  errorText: _fieldErrors['courseId'],
+                ),
+                dropdownColor: const Color(0xFF1E3A8A),
+                style: const TextStyle(color: Colors.white),
+                items: widget.courses.map((course) {
+                  return DropdownMenuItem<int>(
+                    value: course['id'] as int,
+                    child: Text(course['name']?.toString() ?? 'Unnamed'),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCourseId = value;
+                    _fieldErrors['courseId'] = null;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select a course';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // Name Field
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Section Name',
+                  hintText: 'Enter section name',
+                  prefixIcon: const Icon(Icons.view_list, color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white, width: 2),
+                  ),
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  errorText: _fieldErrors['name'],
+                ),
+                style: const TextStyle(color: Colors.white),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Section name is required';
+                  }
+                  if (value.trim().length < 4) {
+                    return 'Section name must be at least 4 characters';
+                  }
+                  if (value.trim().length > 100) {
+                    return 'Section name must be at most 100 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 32),
+              
+              // Create Button
+              ElevatedButton(
+                onPressed: _isCreating ? null : _handleCreate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF3B82F6),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isCreating
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                        ),
+                      )
+                    : const Text(
+                        'Create Section',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Edit Section Modal
+class _EditSectionModalContent extends StatefulWidget {
+  final Map<String, dynamic> section;
+  final List<Map<String, dynamic>> courses;
+  final VoidCallback? onSectionUpdated;
+  
+  const _EditSectionModalContent({
+    required this.section,
+    required this.courses,
+    this.onSectionUpdated,
+  });
+
+  @override
+  State<_EditSectionModalContent> createState() => _EditSectionModalContentState();
+}
+
+class _EditSectionModalContentState extends State<_EditSectionModalContent> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final ApiService _apiService = ApiService();
+  late final TextEditingController _nameController;
+  late int? _selectedCourseId;
+  bool _isUpdating = false;
+  Map<String, String?> _fieldErrors = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.section['name']?.toString() ?? '');
+    _selectedCourseId = widget.section['courseId'] as int?;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleUpdate() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isUpdating = true;
+      _fieldErrors = {};
+    });
+
+    final id = widget.section['id'] as int;
+    final response = await _apiService.updateSection(
+      id,
+      _nameController.text.trim(),
+      _selectedCourseId,
+    );
+
+    setState(() {
+      _isUpdating = false;
+    });
+
+    if (response['success'] == true) {
+      if (mounted) {
+        widget.onSectionUpdated?.call();
+        Navigator.of(context).pop();
+      }
+    } else {
+      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
+      
+      setState(() {
+        _fieldErrors = {};
+        if (apiErrors != null) {
+          if (apiErrors.containsKey('Name')) {
+            _fieldErrors['name'] = apiErrors['Name']!.first;
+          }
+          if (apiErrors.containsKey('CourseId')) {
+            _fieldErrors['courseId'] = apiErrors['CourseId']!.first;
+          }
+        }
+      });
+      
+      _formKey.currentState?.validate();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to update section'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Edit Section',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              
+              // Course Dropdown
+              DropdownButtonFormField<int>(
+                value: _selectedCourseId,
+                decoration: InputDecoration(
+                  labelText: 'Course',
+                  hintText: 'Select a course',
+                  prefixIcon: const Icon(Icons.book, color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white, width: 2),
+                  ),
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  errorText: _fieldErrors['courseId'],
+                ),
+                dropdownColor: const Color(0xFF1E3A8A),
+                style: const TextStyle(color: Colors.white),
+                items: widget.courses.map((course) {
+                  return DropdownMenuItem<int>(
+                    value: course['id'] as int,
+                    child: Text(course['name']?.toString() ?? 'Unnamed'),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCourseId = value;
+                    _fieldErrors['courseId'] = null;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select a course';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // Name Field
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Section Name',
+                  hintText: 'Enter section name',
+                  prefixIcon: const Icon(Icons.view_list, color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Colors.white, width: 2),
+                  ),
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  errorText: _fieldErrors['name'],
+                ),
+                style: const TextStyle(color: Colors.white),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Section name is required';
+                  }
+                  if (value.trim().length < 4) {
+                    return 'Section name must be at least 4 characters';
+                  }
+                  if (value.trim().length > 100) {
+                    return 'Section name must be at most 100 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 32),
+              
+              // Update Button
+              ElevatedButton(
+                onPressed: _isUpdating ? null : _handleUpdate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF3B82F6),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isUpdating
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                        ),
+                      )
+                    : const Text(
+                        'Update Section',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
