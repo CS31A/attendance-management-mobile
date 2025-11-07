@@ -820,8 +820,18 @@ class _AddEnrollmentModalState extends State<_AddEnrollmentModal> {
   @override
   void initState() {
     super.initState();
+    // Only set default section if it exists in the sections list
     if (widget.defaultSectionId != null) {
-      _selectedSectionId = widget.defaultSectionId;
+      final sectionExists = widget.sections.any((section) {
+        final sectionId = section['id'] ?? section['sectionId'];
+        final sectionIdInt = sectionId is int 
+            ? sectionId 
+            : int.tryParse(sectionId?.toString() ?? '');
+        return sectionIdInt == widget.defaultSectionId;
+      });
+      if (sectionExists) {
+        _selectedSectionId = widget.defaultSectionId;
+      }
     }
   }
 
@@ -994,16 +1004,26 @@ class _AddEnrollmentModalState extends State<_AddEnrollmentModal> {
                             border: InputBorder.none,
                             hintText: 'Select a student',
                           ),
-                          items: widget.students.map((student) {
-                            final studentId = student['id'] ?? student['userId'];
-                            final studentIdInt = studentId is int 
-                                ? studentId 
-                                : int.tryParse(studentId?.toString() ?? '');
-                            return DropdownMenuItem(
-                              value: studentIdInt,
-                              child: Text(_getStudentDisplay(student)),
-                            );
-                          }).toList(),
+                          items: [
+                            const DropdownMenuItem<int>(
+                              value: null,
+                              child: Text(
+                                'Select a student',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ),
+                            ...widget.students.map((student) {
+                              final studentId = student['id'] ?? student['userId'];
+                              final studentIdInt = studentId is int 
+                                  ? studentId 
+                                  : int.tryParse(studentId?.toString() ?? '');
+                              if (studentIdInt == null) return null;
+                              return DropdownMenuItem<int>(
+                                value: studentIdInt,
+                                child: Text(_getStudentDisplay(student)),
+                              );
+                            }).whereType<DropdownMenuItem<int>>().toList(),
+                          ],
                           onChanged: (value) {
                             setState(() {
                               _selectedStudentId = value;
@@ -1041,17 +1061,27 @@ class _AddEnrollmentModalState extends State<_AddEnrollmentModal> {
                             border: InputBorder.none,
                             hintText: 'Select a section',
                           ),
-                          items: widget.sections.map((section) {
-                            final sectionId = section['id'] ?? section['sectionId'];
-                            final sectionIdInt = sectionId is int 
-                                ? sectionId 
-                                : int.tryParse(sectionId?.toString() ?? '');
-                            final sectionName = section['name']?.toString() ?? 'Section $sectionId';
-                            return DropdownMenuItem(
-                              value: sectionIdInt,
-                              child: Text(sectionName),
-                            );
-                          }).toList(),
+                          items: [
+                            const DropdownMenuItem<int>(
+                              value: null,
+                              child: Text(
+                                'Select a section',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ),
+                            ...widget.sections.map((section) {
+                              final sectionId = section['id'] ?? section['sectionId'];
+                              final sectionIdInt = sectionId is int 
+                                  ? sectionId 
+                                  : int.tryParse(sectionId?.toString() ?? '');
+                              if (sectionIdInt == null) return null;
+                              final sectionName = section['name']?.toString() ?? 'Section $sectionId';
+                              return DropdownMenuItem<int>(
+                                value: sectionIdInt,
+                                child: Text(sectionName),
+                              );
+                            }).whereType<DropdownMenuItem<int>>().toList(),
+                          ],
                           onChanged: (value) {
                             setState(() {
                               _selectedSectionId = value;
@@ -1089,21 +1119,31 @@ class _AddEnrollmentModalState extends State<_AddEnrollmentModal> {
                             border: InputBorder.none,
                             hintText: 'Select a subject',
                           ),
-                          items: widget.subjects.map((subject) {
-                            final subjectId = subject['id'] ?? subject['subjectId'];
-                            final subjectIdInt = subjectId is int 
-                                ? subjectId 
-                                : int.tryParse(subjectId?.toString() ?? '');
-                            final name = subject['name']?.toString() ?? '';
-                            final code = subject['code']?.toString() ?? '';
-                            final display = name.isNotEmpty && code.isNotEmpty
-                                ? '$code - $name'
-                                : (name.isNotEmpty ? name : (code.isNotEmpty ? code : 'Subject $subjectId'));
-                            return DropdownMenuItem(
-                              value: subjectIdInt,
-                              child: Text(display),
-                            );
-                          }).toList(),
+                          items: [
+                            const DropdownMenuItem<int>(
+                              value: null,
+                              child: Text(
+                                'Select a subject',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ),
+                            ...widget.subjects.map((subject) {
+                              final subjectId = subject['id'] ?? subject['subjectId'];
+                              final subjectIdInt = subjectId is int 
+                                  ? subjectId 
+                                  : int.tryParse(subjectId?.toString() ?? '');
+                              if (subjectIdInt == null) return null;
+                              final name = subject['name']?.toString() ?? '';
+                              final code = subject['code']?.toString() ?? '';
+                              final display = name.isNotEmpty && code.isNotEmpty
+                                  ? '$code - $name'
+                                  : (name.isNotEmpty ? name : (code.isNotEmpty ? code : 'Subject $subjectId'));
+                              return DropdownMenuItem<int>(
+                                value: subjectIdInt,
+                                child: Text(display),
+                              );
+                            }).whereType<DropdownMenuItem<int>>().toList(),
+                          ],
                           onChanged: (value) {
                             setState(() {
                               _selectedSubjectId = value;
