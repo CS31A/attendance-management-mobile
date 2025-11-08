@@ -6,14 +6,66 @@ class ApiService {
   // Update this to your actual backend URL
   static const String baseUrl = 'https://localhost:8081';
   
+  // Flag to prevent multiple simultaneous refresh attempts
+  bool _isRefreshing = false;
+  
   // Get headers with authentication token
-  Future<Map<String, String>> _getHeaders() async {
+  Future<Map<String, String>> _getHeaders({bool skipAuth = false}) async {
+    if (skipAuth) {
+      return {
+        'Content-Type': 'application/json',
+        'Accept': '*/*',
+      };
+    }
     final token = await StorageService.getAccessToken();
     return {
       'Content-Type': 'application/json',
       'Accept': '*/*',
       if (token != null) 'Authorization': 'Bearer $token',
     };
+  }
+
+  // Make an authenticated request with automatic token refresh on 401
+  Future<http.Response> _makeAuthenticatedRequest(
+    Future<http.Response> Function() requestFn, {
+    bool isRefreshRequest = false,
+  }) async {
+    // Make the initial request
+    var response = await requestFn();
+
+    // If we get a 401 and this is not a refresh request, try to refresh the token
+    if (response.statusCode == 401 && !isRefreshRequest) {
+      print('🔑 Received 401, attempting to refresh token...');
+      
+      // Prevent multiple simultaneous refresh attempts
+      if (!_isRefreshing) {
+        _isRefreshing = true;
+        try {
+          final refreshResult = await refreshToken();
+          
+          if (refreshResult['success'] == true) {
+            print('✅ Token refreshed successfully, retrying original request...');
+            // Retry the original request with the new token
+            response = await requestFn();
+          } else {
+            print('❌ Token refresh failed: ${refreshResult['message']}');
+            // If refresh fails, clear tokens and return the 401 response
+            await StorageService.clearTokens();
+          }
+        } catch (e) {
+          print('❌ Token refresh error: $e');
+          await StorageService.clearTokens();
+        } finally {
+          _isRefreshing = false;
+        }
+      } else {
+        // If refresh is already in progress, wait a bit and retry
+        await Future.delayed(const Duration(milliseconds: 500));
+        response = await requestFn();
+      }
+    }
+
+    return response;
   }
 
   // Login user
@@ -80,7 +132,7 @@ class ApiService {
     }
   }
 
-  // Refresh access token
+  // Refresh access token (does NOT use _makeAuthenticatedRequest to avoid loops)
   Future<Map<String, dynamic>> refreshToken() async {
     try {
       final refreshTokenValue = await StorageService.getRefreshToken();
@@ -133,6 +185,7 @@ class ApiService {
             responseData['accessToken'] as String,
             responseData['refreshToken'] as String? ?? refreshTokenValue,
           );
+          print('✅ New tokens saved successfully');
         }
         
         return {
@@ -248,12 +301,15 @@ class ApiService {
   // Get list of users from /api/users endpoint
   Future<Map<String, dynamic>> getUsers() async {
     try {
-      final headers = await _getHeaders();
       final url = Uri.parse('$baseUrl/api/users');
       
       print('📤 Fetching users from /api/users: $url');
       
-      final response = await http.get(url, headers: headers);
+      final response = await _makeAuthenticatedRequest(() async {
+        final headers = await _getHeaders();
+        return await http.get(url, headers: headers);
+      });
+      
       print('📥 Users response status: ${response.statusCode}');
       print('📥 Users response body: ${response.body}');
       
@@ -306,12 +362,6 @@ class ApiService {
           'success': true,
           'data': normalizedUsers,
         };
-      } else if (response.statusCode == 401) {
-        return {
-          'success': false,
-          'message': 'Unauthorized. Please login again.',
-          'data': [],
-        };
       } else {
         final responseData = response.body.isNotEmpty 
             ? jsonDecode(response.body) 
@@ -337,11 +387,13 @@ class ApiService {
   // Get current authenticated account details
   Future<Map<String, dynamic>> getCurrentAccount() async {
     try {
-      final headers = await _getHeaders();
       final url = Uri.parse('$baseUrl/api/account/me');
 
       print('📤 Fetching current account: $url');
-      final response = await http.get(url, headers: headers);
+      final response = await _makeAuthenticatedRequest(() async {
+        final headers = await _getHeaders();
+        return await http.get(url, headers: headers);
+      });
       print('📥 Response status: ${response.statusCode}');
       print('📥 Response body: ${response.body}');
 
@@ -387,7 +439,6 @@ class ApiService {
   }) async {
     try {
       final url = Uri.parse('$baseUrl/api/account/admin/users/$userId');
-      final headers = await _getHeaders();
       
       final body = <String, dynamic>{};
       if (username != null) body['username'] = username;
@@ -400,11 +451,14 @@ class ApiService {
       print('📤 Updating user: $url');
       print('📦 Request body: $body');
 
-      final response = await http.put(
-        url,
-        headers: headers,
-        body: jsonEncode(body),
-      );
+      final response = await _makeAuthenticatedRequest(() async {
+        final headers = await _getHeaders();
+        return await http.put(
+          url,
+          headers: headers,
+          body: jsonEncode(body),
+        );
+      });
 
       print('📥 Response status: ${response.statusCode}');
       print('📥 Response body: ${response.body}');
@@ -443,7 +497,6 @@ class ApiService {
   }) async {
     try {
       final url = Uri.parse('$baseUrl/api/account/profile');
-      final headers = await _getHeaders();
 
       final body = <String, dynamic>{
         if (firstname != null) 'firstname': firstname,
@@ -459,11 +512,14 @@ class ApiService {
       print('📤 Updating profile: $url');
       print('📦 Request body: ${Map<String, dynamic>.from(body)..updateAll((k, v) => k.toLowerCase().contains('password') ? '***' : v)}');
 
-      final response = await http.patch(
-        url,
-        headers: headers,
-        body: jsonEncode(body),
-      );
+      final response = await _makeAuthenticatedRequest(() async {
+        final headers = await _getHeaders();
+        return await http.patch(
+          url,
+          headers: headers,
+          body: jsonEncode(body),
+        );
+      });
 
       print('📥 Response status: ${response.statusCode}');
       print('📥 Response body: ${response.body}');
@@ -524,14 +580,16 @@ class ApiService {
   Future<Map<String, dynamic>> logout() async {
     try {
       final url = Uri.parse('$baseUrl/api/account/logout');
-      final headers = await _getHeaders();
 
       print('📤 Logging out: $url');
 
-      final response = await http.post(
-        url,
-        headers: headers,
-      );
+      final response = await _makeAuthenticatedRequest(() async {
+        final headers = await _getHeaders();
+        return await http.post(
+          url,
+          headers: headers,
+        );
+      });
 
       print('📥 Response status: ${response.statusCode}');
       print('📥 Response body: ${response.body}');
@@ -569,11 +627,13 @@ class ApiService {
   Future<Map<String, dynamic>> deleteUser(String userId) async {
     try {
       final url = Uri.parse('$baseUrl/api/account/admin/users/$userId');
-      final headers = await _getHeaders();
 
       print('📤 Deleting user: $url');
 
-      final response = await http.delete(url, headers: headers);
+      final response = await _makeAuthenticatedRequest(() async {
+        final headers = await _getHeaders();
+        return await http.delete(url, headers: headers);
+      });
 
       print('📥 Response status: ${response.statusCode}');
 
@@ -602,10 +662,12 @@ class ApiService {
   Future<Map<String, dynamic>> getClassrooms() async {
     try {
       final url = Uri.parse('$baseUrl/api/classrooms');
-      final headers = await _getHeaders();
 
       print('📤 Fetching classrooms: $url');
-      final response = await http.get(url, headers: headers);
+      final response = await _makeAuthenticatedRequest(() async {
+        final headers = await _getHeaders();
+        return await http.get(url, headers: headers);
+      });
       print('📥 Response status: ${response.statusCode}');
       print('📥 Response body: ${response.body}');
 
