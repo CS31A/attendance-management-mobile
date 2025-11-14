@@ -2,15 +2,11 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'teachers_management_screen.dart';
-import 'students_management_screen.dart';
 import 'users_management_screen.dart';
-import 'user_management_hub.dart';
-import '../services/app_data.dart';
 import 'reports_screen.dart';
-import 'admin_settings_screen.dart';
-import 'profile_edit_screen.dart';
-import '../models/user.dart';
+import 'profile_screen.dart';
+import 'classes_screen.dart';
+import 'enrollment_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -127,18 +123,15 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       case 0:
         return _buildDashboardContent();
       case 1:
+        return const EnrollmentScreen();
+      case 2:
+        return const ClassesScreen();
+      case 3:
         return UsersManagementScreen(
           onBackPressed: _navigateToDashboard,
         );
-      case 2:
-        return ProfileEditScreen(
-          user: User(
-            id: '1',
-            name: 'Admin User',
-            email: 'admin@example.com',
-            role: 'admin',
-          ),
-        );
+      case 4:
+        return const ProfileScreen();
       default:
         return _buildDashboardContent();
     }
@@ -797,6 +790,14 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
               BottomNavigationBarItem(
                 icon: Icon(Icons.dashboard),
                 label: 'Dashboard',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.assignment),
+                label: 'Enrollment',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.class_),
+                label: 'Classes',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.people),

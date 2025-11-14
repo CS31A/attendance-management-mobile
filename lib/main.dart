@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'screens/admin_dashboard.dart';
-import 'services/app_data.dart';
+import 'providers/app_data.dart';
 import 'services/api_service.dart';
 import 'services/storage_service.dart';
 
