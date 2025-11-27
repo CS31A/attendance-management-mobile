@@ -1,6 +1,7 @@
 class AppConfig {
   // API Configuration
-  static const String baseUrl = 'https://192.168.254.106:8081';
+  static const String baseUrl =
+      'http://attendance.eba-8g72z7wh.ap-southeast-1.elasticbeanstalk.com';
 
   // App Information
   static const String appName = 'Attendance Management';

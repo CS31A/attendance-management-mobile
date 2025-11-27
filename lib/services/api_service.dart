@@ -6,7 +6,8 @@ class ApiService {
   // Update this to your actual backend URL
   // For Android Emulator, use 'https://10.0.2.2:8081'
   // For Physical Device, use your machine's LAN IP (e.g., 'https://192.168.1.x:8081')
-  static const String baseUrl = 'https://192.168.254.106:8081';
+  static const String baseUrl =
+      'http://attendance.eba-8g72z7wh.ap-southeast-1.elasticbeanstalk.com';
 
   // Flag to prevent multiple simultaneous refresh attempts
   bool _isRefreshing = false;

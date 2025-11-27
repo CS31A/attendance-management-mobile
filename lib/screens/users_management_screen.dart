@@ -9,7 +9,7 @@ import 'teachers_management_screen.dart';
 
 class UsersManagementScreen extends StatefulWidget {
   final VoidCallback? onBackPressed;
-  
+
   const UsersManagementScreen({super.key, this.onBackPressed});
 
   @override
@@ -18,7 +18,7 @@ class UsersManagementScreen extends StatefulWidget {
 
 class _UsersManagementScreenState extends State<UsersManagementScreen> {
   final ApiService _apiService = ApiService();
-  
+
   List<Map<String, dynamic>> _users = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -65,9 +65,15 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   }
 
   int get _totalUsersCount => _users.length;
-  int get _studentsCount => _users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'student').length;
-  int get _teachersCount => _users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'teacher').length;
-  int get _adminsCount => _users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'admin').length;
+  int get _studentsCount => _users
+      .where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'student')
+      .length;
+  int get _teachersCount => _users
+      .where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'teacher')
+      .length;
+  int get _adminsCount => _users
+      .where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'admin')
+      .length;
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +97,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             children: [
               // Header
               _buildHeader(),
-              
+
               // User Overview - Upper Left
               if (!_isLoading && _errorMessage == null)
                 Padding(
@@ -109,7 +115,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                     ],
                   ),
                 ),
-              
+
               // Content
               Expanded(
                 child: _isLoading
@@ -145,72 +151,91 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                           )
                         : LayoutBuilder(
                             builder: (context, constraints) {
-                              return Column(
-                                children: [
-                                  // Graph Section - Fixed at top
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.all(20),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: Colors.white.withOpacity(0.1),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          // Graph Header
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              return SingleChildScrollView(
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    minHeight: constraints.maxHeight,
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      // Graph Section
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16, vertical: 16),
+                                        child: Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.all(20),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Colors.black.withOpacity(0.2),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            border: Border.all(
+                                              color:
+                                                  Colors.white.withOpacity(0.1),
+                                              width: 1,
+                                            ),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                              // Graph Header
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
                                                 children: [
-                                                  const Text(
-                                                    'User Growth',
-                                                    style: TextStyle(
-                                                      color: Colors.white70,
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    '$_totalUsersCount Total',
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 24,
-                                                      fontWeight: FontWeight.bold,
-                                                    ),
+                                                  Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      const Text(
+                                                        'User Growth',
+                                                        style: TextStyle(
+                                                          color: Colors.white70,
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        '$_totalUsersCount Total',
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 24,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ],
                                               ),
+                                              const SizedBox(height: 24),
+                                              // Chart
+                                              SizedBox(
+                                                height: 220,
+                                                child: _buildAreaChart(),
+                                              ),
                                             ],
                                           ),
-                                          const SizedBox(height: 24),
-                                          // Chart
-                                          SizedBox(
-                                            height: 220,
-                                            child: _buildAreaChart(),
-                                          ),
-                                        ],
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                  
-                                  // Centered Cards Section
-                                  Expanded(
-                                    child: Center(
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+
+                                      // Centered Cards Section
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            16, 0, 16, 16),
                                         child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             const Text(
                                               'Users List',
@@ -221,14 +246,16 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                                               ),
                                             ),
                                             const SizedBox(height: 16),
-                                            
+
                                             // Three Cards Row
                                             Row(
                                               children: [
                                                 Expanded(
                                                   child: GestureDetector(
-                                                    onTap: () => _navigateToStudentsManagement(),
-                                                    child: _buildUserCategoryCard(
+                                                    onTap: () =>
+                                                        _navigateToStudentsManagement(),
+                                                    child:
+                                                        _buildUserCategoryCard(
                                                       label: 'Students',
                                                       count: _studentsCount,
                                                       icon: Icons.school,
@@ -242,8 +269,10 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                                                 const SizedBox(width: 12),
                                                 Expanded(
                                                   child: GestureDetector(
-                                                    onTap: () => _navigateToTeachersManagement(),
-                                                    child: _buildUserCategoryCard(
+                                                    onTap: () =>
+                                                        _navigateToTeachersManagement(),
+                                                    child:
+                                                        _buildUserCategoryCard(
                                                       label: 'Teacher',
                                                       count: _teachersCount,
                                                       icon: Icons.person,
@@ -257,11 +286,15 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                                                 const SizedBox(width: 12),
                                                 Expanded(
                                                   child: GestureDetector(
-                                                    onTap: () => _navigateToFilteredUsers('Admin'),
-                                                    child: _buildUserCategoryCard(
+                                                    onTap: () =>
+                                                        _navigateToFilteredUsers(
+                                                            'Admin'),
+                                                    child:
+                                                        _buildUserCategoryCard(
                                                       label: 'Admin',
                                                       count: _adminsCount,
-                                                      icon: Icons.admin_panel_settings,
+                                                      icon: Icons
+                                                          .admin_panel_settings,
                                                       gradientColors: [
                                                         const Color(0xFF8B5CF6),
                                                         const Color(0xFFA78BFA),
@@ -274,9 +307,9 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                                           ],
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               );
                             },
                           ),
@@ -364,16 +397,29 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
 
   Widget _buildAreaChart() {
     // Get real-time data based on when accounts were created
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+
     // Parse creation dates and group by month
     final now = DateTime.now();
     final currentYear = now.year;
-    
+
     // Initialize month counts for students and teachers
     final List<int> studentCountsByMonth = List.filled(12, 0);
     final List<int> teacherCountsByMonth = List.filled(12, 0);
-    
+
     // Process each user and count by creation month
     for (var user in _users) {
       try {
@@ -388,7 +434,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             print('⚠️ Could not parse date: $createdAtStr');
             continue;
           }
-          
+
           // Only count users from current year
           if (createdAt.year == currentYear) {
             final month = createdAt.month - 1; // 0-11 index
@@ -406,30 +452,32 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
         print('⚠️ Error processing user creation date: $e');
       }
     }
-    
+
     // Calculate cumulative counts (running total)
     int studentCumulative = 0;
     int teacherCumulative = 0;
-    
+
     final studentSpots = List.generate(12, (index) {
       studentCumulative += studentCountsByMonth[index];
       return FlSpot(index.toDouble(), studentCumulative.toDouble());
     });
-    
+
     final teacherSpots = List.generate(12, (index) {
       teacherCumulative += teacherCountsByMonth[index];
       return FlSpot(index.toDouble(), teacherCumulative.toDouble());
     });
-    
+
     // Find max value for Y-axis scaling
     final maxValue = [
       studentCumulative,
       teacherCumulative,
       1, // Minimum of 1 to avoid division by zero
     ].reduce((a, b) => a > b ? a : b);
-    
-    final maxY = maxValue > 0 ? (maxValue * 1.2).ceilToDouble().clamp(5.0, double.infinity) : 10.0;
-    
+
+    final maxY = maxValue > 0
+        ? (maxValue * 1.2).ceilToDouble().clamp(5.0, double.infinity)
+        : 10.0;
+
     return LineChart(
       LineChartData(
         gridData: FlGridData(
@@ -564,7 +612,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                 final value = touchedBarSpot.y.toInt();
                 String label = '';
                 Color color = Colors.white;
-                
+
                 if (touchedBarSpot.barIndex == 0) {
                   label = 'Students';
                   color = const Color(0xFF10B981);
@@ -572,12 +620,12 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                   label = 'Teachers';
                   color = const Color(0xFF3B82F6);
                 }
-                
+
                 final monthIndex = touchedBarSpot.x.toInt();
-                final monthName = monthIndex >= 0 && monthIndex < months.length 
-                    ? months[monthIndex] 
+                final monthName = monthIndex >= 0 && monthIndex < months.length
+                    ? months[monthIndex]
                     : '';
-                
+
                 return LineTooltipItem(
                   '$label\n$value users',
                   TextStyle(
@@ -585,16 +633,18 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
-                  children: monthName.isNotEmpty ? [
-                    TextSpan(
-                      text: '\n$monthName',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 10,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                  ] : null,
+                  children: monthName.isNotEmpty
+                      ? [
+                          TextSpan(
+                            text: '\n$monthName',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 10,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ]
+                      : null,
                 );
               }).toList();
             },
@@ -610,66 +660,71 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     required IconData icon,
     required List<Color> gradientColors,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: gradientColors,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: gradientColors[0].withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+    return AspectRatio(
+      aspectRatio: 1,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradientColors,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: gradientColors[0].withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
-                  borderRadius: BorderRadius.circular(10),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.25),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 22,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            count.toString(),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.0,
+              ],
             ),
-          ),
-        ],
+            Text(
+              count.toString(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -681,6 +736,4 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     );
     await _loadUsers();
   }
-
 }
-

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class FilteredUsersScreen extends StatefulWidget {
   final List<Map<String, dynamic>> users;
   final String role;
-  
+
   const FilteredUsersScreen({
     super.key,
     required this.users,
@@ -16,7 +16,7 @@ class FilteredUsersScreen extends StatefulWidget {
 
 class _FilteredUsersScreenState extends State<FilteredUsersScreen> {
   final TextEditingController _searchController = TextEditingController();
-  
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -28,17 +28,17 @@ class _FilteredUsersScreenState extends State<FilteredUsersScreen> {
     return widget.users.where((user) {
       final userRole = user['role']?.toString().toLowerCase() ?? '';
       final matchesRole = userRole == widget.role.toLowerCase();
-      
+
       if (!matchesRole) return false;
-      
+
       if (query.isEmpty) return true;
-      
+
       final firstName = user['firstname']?.toString().toLowerCase() ?? '';
       final lastName = user['lastname']?.toString().toLowerCase() ?? '';
       final name = user['name']?.toString().toLowerCase() ?? '';
       final email = user['email']?.toString().toLowerCase() ?? '';
       final username = user['username']?.toString().toLowerCase() ?? '';
-      
+
       return firstName.contains(query) ||
           lastName.contains(query) ||
           name.contains(query) ||
@@ -53,9 +53,9 @@ class _FilteredUsersScreenState extends State<FilteredUsersScreen> {
       final lastname = user['lastname']?.toString() ?? '';
       return '$firstname $lastname'.trim();
     }
-    return user['name']?.toString() ?? 
-           user['username']?.toString() ?? 
-           'Unknown User';
+    return user['name']?.toString() ??
+        user['username']?.toString() ??
+        'Unknown User';
   }
 
   String _getRoleDisplayName() {
@@ -100,7 +100,7 @@ class _FilteredUsersScreenState extends State<FilteredUsersScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredUsers = _filteredUsers;
-    
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -121,13 +121,14 @@ class _FilteredUsersScreenState extends State<FilteredUsersScreen> {
             children: [
               // Header
               _buildHeader(),
-              
+
               // Search Bar
               _buildSearchBar(),
-              
+
               // Users Count
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
                   children: [
                     Icon(
@@ -147,13 +148,14 @@ class _FilteredUsersScreenState extends State<FilteredUsersScreen> {
                   ],
                 ),
               ),
-              
+
               // Users List
               Expanded(
                 child: filteredUsers.isEmpty
                     ? _buildEmptyState()
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         itemCount: filteredUsers.length,
                         itemBuilder: (context, index) {
                           final user = filteredUsers[index];
@@ -226,7 +228,8 @@ class _FilteredUsersScreenState extends State<FilteredUsersScreen> {
                 border: InputBorder.none,
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18, color: Color(0xFF667085)),
+                        icon: const Icon(Icons.clear,
+                            size: 18, color: Color(0xFF667085)),
                         onPressed: () {
                           _searchController.clear();
                           setState(() {});
@@ -245,7 +248,7 @@ class _FilteredUsersScreenState extends State<FilteredUsersScreen> {
   Widget _buildUserTile(Map<String, dynamic> user) {
     final email = user['email']?.toString() ?? '';
     final createdAt = user['createdAt']?.toString();
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -287,7 +290,9 @@ class _FilteredUsersScreenState extends State<FilteredUsersScreen> {
               ),
               child: Center(
                 child: Text(
-                  _getUserName(user).isNotEmpty ? _getUserName(user)[0].toUpperCase() : 'U',
+                  _getUserName(user).isNotEmpty
+                      ? _getUserName(user)[0].toUpperCase()
+                      : 'U',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -309,6 +314,7 @@ class _FilteredUsersScreenState extends State<FilteredUsersScreen> {
                       color: Color(0xFF1E3A8A),
                       fontSize: 16,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                   if (email.isNotEmpty) ...[
                     const SizedBox(height: 4),
@@ -329,6 +335,7 @@ class _FilteredUsersScreenState extends State<FilteredUsersScreen> {
                         color: Colors.grey[600],
                         fontSize: 11,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ],
@@ -442,10 +449,19 @@ class _FilteredUsersScreenState extends State<FilteredUsersScreen> {
 
   String _formatMonth(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return months[month - 1];
   }
 }
-

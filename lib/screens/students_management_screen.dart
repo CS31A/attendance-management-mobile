@@ -4,16 +4,17 @@ import '../services/api_service.dart';
 
 class StudentsManagementScreen extends StatefulWidget {
   final VoidCallback? onBackPressed;
-  
+
   const StudentsManagementScreen({super.key, this.onBackPressed});
 
   @override
-  State<StudentsManagementScreen> createState() => _StudentsManagementScreenState();
+  State<StudentsManagementScreen> createState() =>
+      _StudentsManagementScreenState();
 }
 
 class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
   final ApiService _apiService = ApiService();
-  
+
   List<Map<String, dynamic>> _students = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -71,15 +72,17 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
     final query = _searchController.text.trim().toLowerCase();
     return _students.where((student) {
       final matchesQuery = query.isEmpty ||
-          (student['firstname']?.toString().toLowerCase() ?? '').contains(query) ||
-          (student['lastname']?.toString().toLowerCase() ?? '').contains(query) ||
+          (student['firstname']?.toString().toLowerCase() ?? '')
+              .contains(query) ||
+          (student['lastname']?.toString().toLowerCase() ?? '')
+              .contains(query) ||
           (student['email']?.toString().toLowerCase() ?? '').contains(query);
-      
+
       final isDeleted = student['isDeleted'] == true;
       final matchesStatus = _selectedStatusFilter == 'All' ||
           (_selectedStatusFilter == 'Active' && !isDeleted) ||
           (_selectedStatusFilter == 'Deleted' && isDeleted);
-      
+
       return matchesQuery && matchesStatus;
     }).toList();
   }
@@ -95,7 +98,8 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
 
   int get _totalCount => _students.length;
   int get _activeCount => _students.where((s) => s['isDeleted'] != true).length;
-  int get _deletedCount => _students.where((s) => s['isDeleted'] == true).length;
+  int get _deletedCount =>
+      _students.where((s) => s['isDeleted'] == true).length;
 
   @override
   Widget build(BuildContext context) {
@@ -119,11 +123,10 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
             children: [
               // Header
               _buildHeader(),
-              
+
               // Search and Filter
-              if (!_isLoading && _errorMessage == null)
-                _buildSearchAndFilter(),
-              
+              if (!_isLoading && _errorMessage == null) _buildSearchAndFilter(),
+
               // Content
               Expanded(
                 child: _isLoading
@@ -194,11 +197,6 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          IconButton(
-            onPressed: _loadStudents,
-            icon: const Icon(Icons.refresh, color: Colors.white, size: 28),
-            tooltip: 'Refresh',
-          ),
         ],
       ),
     );
@@ -238,7 +236,7 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          
+
           // Status Filter
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -270,7 +268,7 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          
+
           // Stats
           Row(
             children: [
@@ -420,28 +418,30 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          
+
           // Student Info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  studentName,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color:
+                        isDeleted ? Colors.grey[600] : const Color(0xFF1E3A8A),
+                    decoration: isDeleted ? TextDecoration.lineThrough : null,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
                 Row(
                   children: [
-                    Expanded(
-                      child: Text(
-                        studentName,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isDeleted ? Colors.grey[600] : const Color(0xFF1E3A8A),
-                          decoration: isDeleted ? TextDecoration.lineThrough : null,
-                        ),
-                      ),
-                    ),
                     if (isRegular)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.blue.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
@@ -463,11 +463,14 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
                     children: [
                       Icon(Icons.class_, size: 12, color: Colors.grey[600]),
                       const SizedBox(width: 4),
-                      Text(
-                        'Section: $sectionId',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
+                      Expanded(
+                        child: Text(
+                          'Section: $sectionId',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -478,11 +481,14 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
                     children: [
                       Icon(Icons.person, size: 12, color: Colors.grey[500]),
                       const SizedBox(width: 4),
-                      Text(
-                        'User ID: $userId',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[500],
+                      Expanded(
+                        child: Text(
+                          'User ID: $userId',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[500],
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -491,7 +497,7 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
               ],
             ),
           ),
-          
+
           // Actions
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -528,7 +534,8 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
                   value: 'soft_delete',
                   child: Row(
                     children: [
-                      Icon(Icons.delete_outline, size: 18, color: Colors.orange),
+                      Icon(Icons.delete_outline,
+                          size: 18, color: Colors.orange),
                       SizedBox(width: 8),
                       Text('Soft Delete'),
                     ],
@@ -634,48 +641,52 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: isUpdating ? null : () async {
-                if (formKey.currentState!.validate()) {
-                  setDialogState(() {
-                    isUpdating = true;
-                  });
+              onPressed: isUpdating
+                  ? null
+                  : () async {
+                      if (formKey.currentState!.validate()) {
+                        setDialogState(() {
+                          isUpdating = true;
+                        });
 
-                  final response = await _apiService.updateStudent(
-                    id: studentId,
-                    firstname: firstnameController.text.trim().isEmpty
-                        ? null
-                        : firstnameController.text.trim(),
-                    lastname: lastnameController.text.trim().isEmpty
-                        ? null
-                        : lastnameController.text.trim(),
-                    isRegular: isRegular,
-                  );
+                        final response = await _apiService.updateStudent(
+                          id: studentId,
+                          firstname: firstnameController.text.trim().isEmpty
+                              ? null
+                              : firstnameController.text.trim(),
+                          lastname: lastnameController.text.trim().isEmpty
+                              ? null
+                              : lastnameController.text.trim(),
+                          isRegular: isRegular,
+                        );
 
-                  setDialogState(() {
-                    isUpdating = false;
-                  });
+                        setDialogState(() {
+                          isUpdating = false;
+                        });
 
-                  if (response['success'] == true) {
-                    if (mounted) {
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(response['message'] ?? 'Student updated successfully'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                      _loadStudents();
-                    }
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(response['message'] ?? 'Failed to update student'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
+                        if (response['success'] == true) {
+                          if (mounted) {
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(response['message'] ??
+                                    'Student updated successfully'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            _loadStudents();
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(response['message'] ??
+                                  'Failed to update student'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
               child: isUpdating
                   ? const SizedBox(
                       height: 20,
@@ -695,7 +706,8 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Soft Delete Student'),
-        content: const Text('Are you sure you want to soft delete this student? They can be restored later.'),
+        content: const Text(
+            'Are you sure you want to soft delete this student? They can be restored later.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -712,11 +724,12 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
 
     if (confirmed == true) {
       final response = await _apiService.softDeleteStudent(studentId);
-      
+
       if (response['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Student soft deleted successfully'),
+            content: Text(
+                response['message'] ?? 'Student soft deleted successfully'),
             backgroundColor: Colors.green,
           ),
         );
@@ -724,7 +737,8 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Failed to soft delete student'),
+            content:
+                Text(response['message'] ?? 'Failed to soft delete student'),
             backgroundColor: Colors.red,
           ),
         );
@@ -754,11 +768,12 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
 
     if (confirmed == true) {
       final response = await _apiService.restoreStudent(studentId);
-      
+
       if (response['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Student restored successfully'),
+            content:
+                Text(response['message'] ?? 'Student restored successfully'),
             backgroundColor: Colors.green,
           ),
         );
@@ -798,11 +813,12 @@ class _StudentsManagementScreenState extends State<StudentsManagementScreen> {
 
     if (confirmed == true) {
       final response = await _apiService.deleteStudent(studentId);
-      
+
       if (response['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Student deleted successfully'),
+            content:
+                Text(response['message'] ?? 'Student deleted successfully'),
             backgroundColor: Colors.green,
           ),
         );

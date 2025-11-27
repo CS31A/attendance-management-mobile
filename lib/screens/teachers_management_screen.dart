@@ -4,16 +4,17 @@ import '../services/api_service.dart';
 
 class TeachersManagementScreen extends StatefulWidget {
   final VoidCallback? onBackPressed;
-  
+
   const TeachersManagementScreen({super.key, this.onBackPressed});
 
   @override
-  State<TeachersManagementScreen> createState() => _TeachersManagementScreenState();
+  State<TeachersManagementScreen> createState() =>
+      _TeachersManagementScreenState();
 }
 
 class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
   final ApiService _apiService = ApiService();
-  
+
   List<Map<String, dynamic>> _instructors = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -71,14 +72,16 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
     final query = _searchController.text.trim().toLowerCase();
     return _instructors.where((instructor) {
       final matchesQuery = query.isEmpty ||
-          (instructor['firstname']?.toString().toLowerCase() ?? '').contains(query) ||
-          (instructor['lastname']?.toString().toLowerCase() ?? '').contains(query);
-      
+          (instructor['firstname']?.toString().toLowerCase() ?? '')
+              .contains(query) ||
+          (instructor['lastname']?.toString().toLowerCase() ?? '')
+              .contains(query);
+
       final isDeleted = instructor['isDeleted'] == true;
       final matchesStatus = _selectedStatusFilter == 'All' ||
           (_selectedStatusFilter == 'Active' && !isDeleted) ||
           (_selectedStatusFilter == 'Deleted' && isDeleted);
-      
+
       return matchesQuery && matchesStatus;
     }).toList();
   }
@@ -93,8 +96,10 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
   }
 
   int get _totalCount => _instructors.length;
-  int get _activeCount => _instructors.where((i) => i['isDeleted'] != true).length;
-  int get _deletedCount => _instructors.where((i) => i['isDeleted'] == true).length;
+  int get _activeCount =>
+      _instructors.where((i) => i['isDeleted'] != true).length;
+  int get _deletedCount =>
+      _instructors.where((i) => i['isDeleted'] == true).length;
 
   @override
   Widget build(BuildContext context) {
@@ -118,11 +123,10 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
             children: [
               // Header
               _buildHeader(),
-              
+
               // Search and Filter
-              if (!_isLoading && _errorMessage == null)
-                _buildSearchAndFilter(),
-              
+              if (!_isLoading && _errorMessage == null) _buildSearchAndFilter(),
+
               // Content
               Expanded(
                 child: _isLoading
@@ -193,11 +197,6 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
               textAlign: TextAlign.center,
             ),
           ),
-          IconButton(
-            onPressed: _loadInstructors,
-            icon: const Icon(Icons.refresh, color: Colors.white, size: 28),
-            tooltip: 'Refresh',
-          ),
         ],
       ),
     );
@@ -237,7 +236,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          
+
           // Status Filter
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -269,7 +268,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          
+
           // Stats
           Row(
             children: [
@@ -417,7 +416,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          
+
           // Instructor Info
           Expanded(
             child: Column(
@@ -428,9 +427,11 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: isDeleted ? Colors.grey[600] : const Color(0xFF1E3A8A),
+                    color:
+                        isDeleted ? Colors.grey[600] : const Color(0xFF1E3A8A),
                     decoration: isDeleted ? TextDecoration.lineThrough : null,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
                 if (userId != null) ...[
                   const SizedBox(height: 4),
@@ -438,11 +439,14 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                     children: [
                       Icon(Icons.person, size: 12, color: Colors.grey[500]),
                       const SizedBox(width: 4),
-                      Text(
-                        'User ID: $userId',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[500],
+                      Expanded(
+                        child: Text(
+                          'User ID: $userId',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[500],
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -451,7 +455,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
               ],
             ),
           ),
-          
+
           // Actions
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -501,7 +505,8 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                   value: 'soft_delete',
                   child: Row(
                     children: [
-                      Icon(Icons.delete_outline, size: 18, color: Colors.orange),
+                      Icon(Icons.delete_outline,
+                          size: 18, color: Colors.orange),
                       SizedBox(width: 8),
                       Text('Soft Delete'),
                     ],
@@ -596,47 +601,51 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: isUpdating ? null : () async {
-                if (formKey.currentState!.validate()) {
-                  setDialogState(() {
-                    isUpdating = true;
-                  });
+              onPressed: isUpdating
+                  ? null
+                  : () async {
+                      if (formKey.currentState!.validate()) {
+                        setDialogState(() {
+                          isUpdating = true;
+                        });
 
-                  final response = await _apiService.updateInstructor(
-                    id: instructorId,
-                    firstname: firstnameController.text.trim().isEmpty
-                        ? null
-                        : firstnameController.text.trim(),
-                    lastname: lastnameController.text.trim().isEmpty
-                        ? null
-                        : lastnameController.text.trim(),
-                  );
+                        final response = await _apiService.updateInstructor(
+                          id: instructorId,
+                          firstname: firstnameController.text.trim().isEmpty
+                              ? null
+                              : firstnameController.text.trim(),
+                          lastname: lastnameController.text.trim().isEmpty
+                              ? null
+                              : lastnameController.text.trim(),
+                        );
 
-                  setDialogState(() {
-                    isUpdating = false;
-                  });
+                        setDialogState(() {
+                          isUpdating = false;
+                        });
 
-                  if (response['success'] == true) {
-                    if (mounted) {
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(response['message'] ?? 'Teacher updated successfully'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                      _loadInstructors();
-                    }
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(response['message'] ?? 'Failed to update teacher'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
+                        if (response['success'] == true) {
+                          if (mounted) {
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(response['message'] ??
+                                    'Teacher updated successfully'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            _loadInstructors();
+                          }
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(response['message'] ??
+                                  'Failed to update teacher'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
               child: isUpdating
                   ? const SizedBox(
                       height: 20,
@@ -656,7 +665,8 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Soft Delete Teacher'),
-        content: const Text('Are you sure you want to soft delete this teacher? They can be restored later.'),
+        content: const Text(
+            'Are you sure you want to soft delete this teacher? They can be restored later.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -673,11 +683,12 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
 
     if (confirmed == true) {
       final response = await _apiService.softDeleteInstructor(instructorId);
-      
+
       if (response['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Teacher soft deleted successfully'),
+            content: Text(
+                response['message'] ?? 'Teacher soft deleted successfully'),
             backgroundColor: Colors.green,
           ),
         );
@@ -685,7 +696,8 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Failed to soft delete teacher'),
+            content:
+                Text(response['message'] ?? 'Failed to soft delete teacher'),
             backgroundColor: Colors.red,
           ),
         );
@@ -715,11 +727,12 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
 
     if (confirmed == true) {
       final response = await _apiService.restoreInstructor(instructorId);
-      
+
       if (response['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Teacher restored successfully'),
+            content:
+                Text(response['message'] ?? 'Teacher restored successfully'),
             backgroundColor: Colors.green,
           ),
         );
@@ -759,11 +772,12 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
 
     if (confirmed == true) {
       final response = await _apiService.deleteInstructor(instructorId);
-      
+
       if (response['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(response['message'] ?? 'Teacher deleted successfully'),
+            content:
+                Text(response['message'] ?? 'Teacher deleted successfully'),
             backgroundColor: Colors.green,
           ),
         );
@@ -788,13 +802,13 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
     );
 
     final response = await _apiService.getInstructorSubjects(instructorId);
-    
+
     if (!mounted) return;
     Navigator.of(context).pop(); // Close loading dialog
 
     if (response['success'] == true) {
       final subjects = response['data'] as List<Map<String, dynamic>>;
-      
+
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
