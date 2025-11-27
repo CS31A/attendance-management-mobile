@@ -35,7 +35,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (res['success'] == true && res['data'] is Map<String, dynamic>) {
       setState(() {
-        _account = Map<String, dynamic>.from(res['data'] as Map<String, dynamic>);
+        _account =
+            Map<String, dynamic>.from(res['data'] as Map<String, dynamic>);
         _isLoading = false;
       });
     } else {
@@ -101,7 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Title
               const Text(
                 'Logout',
@@ -113,7 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              
+
               // Message
               const Text(
                 'Are you sure you want to logout?',
@@ -124,7 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              
+
               // Action Buttons
               Row(
                 children: [
@@ -255,7 +256,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (timestamp == null || timestamp.isEmpty || timestamp == '-') return '-';
     try {
       final dt = DateTime.parse(timestamp);
-      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
       final month = months[dt.month - 1];
       final day = dt.day.toString().padLeft(2, '0');
       final year = dt.year;
@@ -324,9 +338,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         // Header with cover and centered profile
         _buildProfileHeader(username: username, role: role),
-        
+
         const SizedBox(height: 20),
-        
+
         // Username
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -340,9 +354,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
-        
+
         const SizedBox(height: 20),
-        
+
         // Edit Profile Button
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -371,9 +385,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
-        
+
         const SizedBox(height: 32),
-        
+
         // Details Section
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 24),
@@ -386,17 +400,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Details Cards - Dynamically generated from API response
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: _buildDynamicDetails(),
         ),
-        
+
         const SizedBox(height: 40),
-        
+
         // Logout Button
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -422,7 +436,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
-        
+
         const SizedBox(height: 40),
       ],
     );
@@ -480,7 +494,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         ),
-        
+
         // Profile Picture - Centered and overlapping
         Positioned(
           top: 80,
@@ -546,24 +560,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     // Map of field keys to display configuration
     final fieldConfig = {
-      'username': {'icon': Icons.person_outline, 'color': const Color(0xFF3B82F6), 'label': 'Username'},
-      'email': {'icon': Icons.email_outlined, 'color': const Color(0xFF3B82F6), 'label': 'Email'},
-      'role': {'icon': Icons.admin_panel_settings_outlined, 'color': const Color(0xFF8B5CF6), 'label': 'Role'},
-      'firstname': {'icon': Icons.badge_outlined, 'color': const Color(0xFF10B981), 'label': 'First Name'},
-      'lastname': {'icon': Icons.badge_outlined, 'color': const Color(0xFF10B981), 'label': 'Last Name'},
-      'sectionId': {'icon': Icons.numbers, 'color': const Color(0xFFF59E0B), 'label': 'Section ID'},
-      'createdAt': {'icon': Icons.event_outlined, 'color': const Color(0xFF10B981), 'label': 'Joined'},
-      'updatedAt': {'icon': Icons.update_outlined, 'color': const Color(0xFFF59E0B), 'label': 'Last Updated'},
-      'isRegular': {'icon': Icons.check_circle_outline, 'color': const Color(0xFF10B981), 'label': 'Regular'},
+      'username': {
+        'icon': Icons.person_outline,
+        'color': const Color(0xFF3B82F6),
+        'label': 'Username'
+      },
+      'email': {
+        'icon': Icons.email_outlined,
+        'color': const Color(0xFF3B82F6),
+        'label': 'Email'
+      },
+      'role': {
+        'icon': Icons.admin_panel_settings_outlined,
+        'color': const Color(0xFF8B5CF6),
+        'label': 'Role'
+      },
+      'firstname': {
+        'icon': Icons.badge_outlined,
+        'color': const Color(0xFF10B981),
+        'label': 'First Name'
+      },
+      'lastname': {
+        'icon': Icons.badge_outlined,
+        'color': const Color(0xFF10B981),
+        'label': 'Last Name'
+      },
+      'sectionId': {
+        'icon': Icons.numbers,
+        'color': const Color(0xFFF59E0B),
+        'label': 'Section ID'
+      },
+      'createdAt': {
+        'icon': Icons.event_outlined,
+        'color': const Color(0xFF10B981),
+        'label': 'Joined'
+      },
+      'updatedAt': {
+        'icon': Icons.update_outlined,
+        'color': const Color(0xFFF59E0B),
+        'label': 'Last Updated'
+      },
+      'isRegular': {
+        'icon': Icons.check_circle_outline,
+        'color': const Color(0xFF10B981),
+        'label': 'Regular'
+      },
     };
 
     // Get all fields from account, excluding null/empty values and userId
     final fields = <String, dynamic>{};
     final excludedFields = {'id', 'userId', 'user_id', '_id'};
     _account!.forEach((key, value) {
-      if (!excludedFields.contains(key) && 
-          value != null && 
-          value.toString().isNotEmpty && 
+      if (!excludedFields.contains(key) &&
+          value != null &&
+          value.toString().isNotEmpty &&
           value.toString() != 'null') {
         fields[key] = value;
       }
@@ -584,11 +634,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     fields.forEach((key, value) {
       final config = fieldConfig[key];
       final icon = config?['icon'] as IconData? ?? Icons.info_outline;
-      final color = config?['color'] as Color? ?? colorList[colorIndex % colorList.length];
+      final color = config?['color'] as Color? ??
+          colorList[colorIndex % colorList.length];
       final label = config?['label'] as String? ?? _formatFieldLabel(key);
-      
+
       String displayValue = value.toString();
-      
+
       // Format timestamps
       if (key == 'createdAt' || key == 'updatedAt') {
         displayValue = _formatTimestamp(displayValue);
@@ -636,7 +687,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return key
         .replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(1)}')
         .split(' ')
-        .map((word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1).toLowerCase())
+        .map((word) => word.isEmpty
+            ? ''
+            : word[0].toUpperCase() + word.substring(1).toLowerCase())
         .join(' ')
         .trim();
   }
@@ -750,19 +803,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 32),
-        ElevatedButton.icon(
-          onPressed: _loadAccount,
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Try Again'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: const Color(0xFF1E40AF),
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton.icon(
+              onPressed: _loadAccount,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Try Again'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF1E40AF),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
             ),
-            elevation: 0,
-          ),
+            const SizedBox(width: 16),
+            OutlinedButton.icon(
+              onPressed: _handleLogout,
+              icon: const Icon(Icons.logout_rounded),
+              label: const Text('Logout'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: const BorderSide(color: Colors.white, width: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -815,7 +889,8 @@ class _EditProfileModalContent extends StatefulWidget {
   });
 
   @override
-  State<_EditProfileModalContent> createState() => _EditProfileModalContentState();
+  State<_EditProfileModalContent> createState() =>
+      _EditProfileModalContentState();
 }
 
 class _EditProfileModalContentState extends State<_EditProfileModalContent> {
@@ -825,9 +900,11 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
   final TextEditingController _firstnameController = TextEditingController();
   final TextEditingController _lastnameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _currentPasswordController =
+      TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _sectionIdController = TextEditingController();
 
   bool isCurrentPasswordVisible = false;
@@ -842,10 +919,12 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
     super.initState();
     // Pre-fill form with current account data
     if (widget.account != null) {
-      _firstnameController.text = widget.account!['firstname']?.toString() ?? '';
+      _firstnameController.text =
+          widget.account!['firstname']?.toString() ?? '';
       _lastnameController.text = widget.account!['lastname']?.toString() ?? '';
       _emailController.text = widget.account!['email']?.toString() ?? '';
-      _sectionIdController.text = widget.account!['sectionId']?.toString() ?? '';
+      _sectionIdController.text =
+          widget.account!['sectionId']?.toString() ?? '';
       isRegular = widget.account!['isRegular'] as bool?;
     }
   }
@@ -873,13 +952,21 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
     });
 
     final response = await _apiService.updateProfile(
-      firstname: _firstnameController.text.trim().isEmpty ? null : _firstnameController.text.trim(),
-      lastname: _lastnameController.text.trim().isEmpty ? null : _lastnameController.text.trim(),
-      email: _emailController.text.trim().isEmpty ? null : _emailController.text.trim(),
+      firstname: _firstnameController.text.trim().isEmpty
+          ? null
+          : _firstnameController.text.trim(),
+      lastname: _lastnameController.text.trim().isEmpty
+          ? null
+          : _lastnameController.text.trim(),
+      email: _emailController.text.trim().isEmpty
+          ? null
+          : _emailController.text.trim(),
       currentPassword: null,
       newPassword: null,
       confirmNewPassword: null,
-      sectionId: _sectionIdController.text.trim().isEmpty ? null : _sectionIdController.text.trim(),
+      sectionId: _sectionIdController.text.trim().isEmpty
+          ? null
+          : _sectionIdController.text.trim(),
       isRegular: isRegular,
     );
 
@@ -900,7 +987,8 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
       }
     } else {
       // Handle API validation errors
-      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
+      Map<String, List<String>>? apiErrors =
+          response['errors'] as Map<String, List<String>>?;
 
       setState(() {
         fieldErrors = {};
@@ -909,12 +997,18 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
           apiErrors.forEach((key, value) {
             // Map API field names to form field names
             String fieldKey = key.toLowerCase();
-            if (fieldKey.contains('firstname')) fieldKey = 'firstname';
-            else if (fieldKey.contains('lastname')) fieldKey = 'lastname';
-            else if (fieldKey.contains('email')) fieldKey = 'email';
-            else if (fieldKey.contains('currentpassword')) fieldKey = 'currentPassword';
-            else if (fieldKey.contains('newpassword')) fieldKey = 'newPassword';
-            else if (fieldKey.contains('confirmpassword')) fieldKey = 'confirmPassword';
+            if (fieldKey.contains('firstname'))
+              fieldKey = 'firstname';
+            else if (fieldKey.contains('lastname'))
+              fieldKey = 'lastname';
+            else if (fieldKey.contains('email'))
+              fieldKey = 'email';
+            else if (fieldKey.contains('currentpassword'))
+              fieldKey = 'currentPassword';
+            else if (fieldKey.contains('newpassword'))
+              fieldKey = 'newPassword';
+            else if (fieldKey.contains('confirmpassword'))
+              fieldKey = 'confirmPassword';
             else if (fieldKey.contains('sectionid')) fieldKey = 'sectionId';
 
             if (value.isNotEmpty) {
@@ -956,169 +1050,173 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-          // Drag Handle
-          Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 8),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(2),
+        // Drag Handle
+        Container(
+          margin: const EdgeInsets.only(top: 12, bottom: 8),
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+
+        // Header
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: const Text(
+            'Edit Profile',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
+        ),
 
-          // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: const Text(
-              'Edit Profile',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
+        // Form Content
+        Flexible(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(24, 0, 24, bottom + 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // First Name
+                  _buildTextField(
+                    label: 'First Name',
+                    icon: Icons.badge_outlined,
+                    controller: _firstnameController,
+                    hintText: 'Enter first name',
+                    fieldKey: 'firstname',
+                  ),
+                  const SizedBox(height: 20),
 
-          // Form Content
-          Flexible(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(24, 0, 24, bottom + 24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // First Name
-                    _buildTextField(
-                      label: 'First Name',
-                      icon: Icons.badge_outlined,
-                      controller: _firstnameController,
-                      hintText: 'Enter first name',
-                      fieldKey: 'firstname',
-                    ),
-                    const SizedBox(height: 20),
+                  // Last Name
+                  _buildTextField(
+                    label: 'Last Name',
+                    icon: Icons.badge_outlined,
+                    controller: _lastnameController,
+                    hintText: 'Enter last name',
+                    fieldKey: 'lastname',
+                  ),
+                  const SizedBox(height: 20),
 
-                    // Last Name
-                    _buildTextField(
-                      label: 'Last Name',
-                      icon: Icons.badge_outlined,
-                      controller: _lastnameController,
-                      hintText: 'Enter last name',
-                      fieldKey: 'lastname',
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Email
-                    _buildTextField(
-                      label: 'Email',
-                      icon: Icons.email_outlined,
-                      controller: _emailController,
-                      hintText: 'Enter email address',
-                      keyboardType: TextInputType.emailAddress,
-                      fieldKey: 'email',
-                      validator: (v) {
-                        if (fieldErrors.containsKey('email')) {
-                          return fieldErrors['email'];
+                  // Email
+                  _buildTextField(
+                    label: 'Email',
+                    icon: Icons.email_outlined,
+                    controller: _emailController,
+                    hintText: 'Enter email address',
+                    keyboardType: TextInputType.emailAddress,
+                    fieldKey: 'email',
+                    validator: (v) {
+                      if (fieldErrors.containsKey('email')) {
+                        return fieldErrors['email'];
+                      }
+                      if (v != null && v.trim().isNotEmpty) {
+                        final emailRegex =
+                            RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                        if (!emailRegex.hasMatch(v.trim())) {
+                          return 'Invalid email format.';
                         }
-                        if (v != null && v.trim().isNotEmpty) {
-                          final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                          if (!emailRegex.hasMatch(v.trim())) {
-                            return 'Invalid email format.';
-                          }
-                        }
-                        return null;
-                      },
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Section ID
+                  if (widget.account?['role']?.toString().toLowerCase() ==
+                      'student') ...[
+                    _buildTextField(
+                      label: 'Section ID',
+                      icon: Icons.numbers,
+                      controller: _sectionIdController,
+                      hintText: 'Enter section ID',
+                      keyboardType: TextInputType.number,
+                      fieldKey: 'sectionId',
                     ),
                     const SizedBox(height: 20),
-
-                    // Section ID
-                    if (widget.account?['role']?.toString().toLowerCase() == 'student') ...[
-                      _buildTextField(
-                        label: 'Section ID',
-                        icon: Icons.numbers,
-                        controller: _sectionIdController,
-                        hintText: 'Enter section ID',
-                        keyboardType: TextInputType.number,
-                        fieldKey: 'sectionId',
-                      ),
-                      const SizedBox(height: 20),
-                    ],
-
-                    // Is Regular (for students)
-                    if (widget.account?['role']?.toString().toLowerCase() == 'student') ...[
-                      _buildRegularToggle(),
-                      const SizedBox(height: 20),
-                    ],
                   ],
-                ),
+
+                  // Is Regular (for students)
+                  if (widget.account?['role']?.toString().toLowerCase() ==
+                      'student') ...[
+                    _buildRegularToggle(),
+                    const SizedBox(height: 20),
+                  ],
+                ],
               ),
             ),
           ),
+        ),
 
-          // Action Buttons
-          Container(
-            padding: EdgeInsets.fromLTRB(24, 16, 24, bottom > 0 ? 0 : 24),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: isUpdating ? null : () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white, width: 2),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+        // Action Buttons
+        Container(
+          padding: EdgeInsets.fromLTRB(24, 16, 24, bottom > 0 ? 0 : 24),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed:
+                      isUpdating ? null : () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white, width: 2),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  ),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton(
-                    onPressed: isUpdating ? null : _handleUpdateProfile,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF1E3A8A),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      elevation: 4,
-                      shadowColor: Colors.black.withOpacity(0.2),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton(
+                  onPressed: isUpdating ? null : _handleUpdateProfile,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF1E3A8A),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    child: isUpdating
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Color(0xFF1E3A8A),
-                            ),
-                          )
-                        : const Text(
-                            'Save Changes',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    elevation: 4,
+                    shadowColor: Colors.black.withOpacity(0.2),
+                  ),
+                  child: isUpdating
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Color(0xFF1E3A8A),
                           ),
-                  ),
+                        )
+                      : const Text(
+                          'Save Changes',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
+      ],
     );
   }
 
@@ -1206,7 +1304,8 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFE4E7EC), width: 1.5),
+              borderSide:
+                  const BorderSide(color: Color(0xFFE4E7EC), width: 1.5),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -1270,7 +1369,8 @@ class _EditProfileModalContentState extends State<_EditProfileModalContent> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           ),
         ),
       ],

@@ -583,7 +583,7 @@ class _ClassesScreenState extends State<ClassesScreen>
                   'Classrooms Overview',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 32,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -629,7 +629,7 @@ class _ClassesScreenState extends State<ClassesScreen>
                   'Courses Overview',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 32,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -667,7 +667,7 @@ class _ClassesScreenState extends State<ClassesScreen>
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      childAspectRatio: 1.2,
+      childAspectRatio: 1.0,
       children: [
         _buildStatCard(
           title: 'Total Classrooms',
@@ -694,7 +694,7 @@ class _ClassesScreenState extends State<ClassesScreen>
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      childAspectRatio: 1.2,
+      childAspectRatio: 1.0,
       children: [
         _buildStatCard(
           title: 'Total Courses',
@@ -722,7 +722,7 @@ class _ClassesScreenState extends State<ClassesScreen>
     required IconData icon,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -741,7 +741,7 @@ class _ClassesScreenState extends State<ClassesScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: gradientColors,
@@ -760,16 +760,16 @@ class _ClassesScreenState extends State<ClassesScreen>
                 child: Icon(
                   icon,
                   color: Colors.white,
-                  size: 24,
+                  size: 20,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             value,
             style: const TextStyle(
-              fontSize: 28,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Color(0xFF3B82F6),
             ),
@@ -778,7 +778,7 @@ class _ClassesScreenState extends State<ClassesScreen>
           Text(
             title,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 12,
               color: Colors.grey[700],
               fontWeight: FontWeight.w500,
             ),
@@ -795,7 +795,7 @@ class _ClassesScreenState extends State<ClassesScreen>
                   ),
                   child: FractionallySizedBox(
                     alignment: Alignment.centerLeft,
-                    widthFactor: progress,
+                    widthFactor: progress.clamp(0.0, 1.0),
                     child: Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -817,9 +817,9 @@ class _ClassesScreenState extends State<ClassesScreen>
               const SizedBox(width: 8),
               Text(
                 '${(progress * 100).toInt()}%',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF3B82F6),
+                  color: gradientColors[0],
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1369,7 +1369,7 @@ class _ClassesScreenState extends State<ClassesScreen>
                   'Sections Overview',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 32,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -1416,7 +1416,7 @@ class _ClassesScreenState extends State<ClassesScreen>
                   'Schedules Overview',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 32,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -1454,7 +1454,7 @@ class _ClassesScreenState extends State<ClassesScreen>
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      childAspectRatio: 1.2,
+      childAspectRatio: 1.0,
       children: [
         _buildStatCard(
           title: 'Total Schedules',
@@ -1652,7 +1652,7 @@ class _ClassesScreenState extends State<ClassesScreen>
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      childAspectRatio: 1.2,
+      childAspectRatio: 1.0,
       children: [
         _buildStatCard(
           title: 'Total Sections',
@@ -2403,7 +2403,7 @@ class _ClassesScreenState extends State<ClassesScreen>
                   'Subjects Overview',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 32,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -2441,7 +2441,7 @@ class _ClassesScreenState extends State<ClassesScreen>
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
-      childAspectRatio: 1.2,
+      childAspectRatio: 1.0,
       children: [
         _buildStatCard(
           title: 'Total Subjects',

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -6,7 +7,17 @@ import 'providers/app_data.dart';
 import 'services/api_service.dart';
 import 'services/storage_service.dart';
 
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
+
 void main() async {
+  HttpOverrides.global = MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
   await AppStorage.init();
   final loggedIn = await AppStorage.isLoggedIn();
@@ -96,7 +107,8 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Unable to connect to server. Please check your internet connection.';
+        _errorMessage =
+            'Unable to connect to server. Please check your internet connection.';
       });
       print('Login error: $e');
     } finally {
@@ -213,7 +225,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(Icons.error_outline, color: Colors.red[300], size: 20),
+                                      Icon(Icons.error_outline,
+                                          color: Colors.red[300], size: 20),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
@@ -345,9 +358,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         suffixIcon: IconButton(
           icon: Icon(
-            _isPasswordVisible
-                ? Icons.visibility
-                : Icons.visibility_off,
+            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
             color: Colors.white,
           ),
           onPressed: () {

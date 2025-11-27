@@ -2,6 +2,10 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../services/api_service.dart';
+import '../services/storage_service.dart';
+import '../providers/app_data.dart';
+import '../main.dart';
 import 'users_management_screen.dart';
 import 'reports_screen.dart';
 import 'profile_screen.dart';
@@ -15,11 +19,22 @@ class AdminDashboard extends StatefulWidget {
   State<AdminDashboard> createState() => _AdminDashboardState();
 }
 
-class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStateMixin {
+class _AdminDashboardState extends State<AdminDashboard>
+    with TickerProviderStateMixin {
+  final ApiService _apiService = ApiService();
+
   int _selectedIndex = 0;
   int _notificationCount = 3;
   String _selectedPeriod = 'Monthly';
-  
+
+  // Stats
+  bool _isLoading = false;
+  String? _errorMessage;
+  int _totalUsers = 0;
+  int _totalStudents = 0;
+  int _totalTeachers = 0;
+  int _totalAdmins = 0;
+
   late AnimationController _entranceController;
   late AnimationController _navigationController;
   late Animation<double> _fadeAnimation;
@@ -28,19 +43,19 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize entrance animation controller
     _entranceController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    
+
     // Initialize navigation animation controller
     _navigationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    
+
     // Setup fade animation
     _fadeAnimation = Tween<double>(
       begin: 0.0,
@@ -49,7 +64,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       parent: _entranceController,
       curve: Curves.easeOut,
     ));
-    
+
     // Setup slide animation
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0.0, 0.1),
@@ -58,9 +73,70 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       parent: _entranceController,
       curve: Curves.easeOut,
     ));
-    
+
     // Start entrance animation
     _entranceController.forward();
+
+    // Load real data
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await _apiService.getUsers();
+      if (response['success'] == true) {
+        final data = response['data'];
+        if (data is List) {
+          final users = List<Map<String, dynamic>>.from(data);
+
+          if (mounted) {
+            setState(() {
+              _totalUsers = users.length;
+              _totalStudents = users
+                  .where((u) =>
+                      (u['role']?.toString() ?? '').toLowerCase() == 'student')
+                  .length;
+              _totalTeachers = users
+                  .where((u) =>
+                      (u['role']?.toString() ?? '').toLowerCase() == 'teacher')
+                  .length;
+              _totalAdmins = users
+                  .where((u) =>
+                      (u['role']?.toString() ?? '').toLowerCase() == 'admin')
+                  .length;
+              _isLoading = false;
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _errorMessage = response['message'] ?? 'Failed to load stats';
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load stats: $e';
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -74,10 +150,13 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     setState(() {
       _selectedIndex = 0;
     });
-    
+
     // Reset and play navigation animation
     _navigationController.reset();
     _navigationController.forward();
+
+    // Reload stats when returning to dashboard
+    _loadStats();
   }
 
   @override
@@ -138,26 +217,30 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
   }
 
   Widget _buildDashboardContent() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with profile
-          _buildModernHeader(),
-          
-          const SizedBox(height: 16),
-          
-          // Stats Grid (2x2) - Updated with management items
-          _buildStatsGrid(),
-          
-          const SizedBox(height: 24),
-          
-          // Chart Section
-          _buildChartSection(),
-          
-          const SizedBox(height: 24),
-        ],
+    return RefreshIndicator(
+      onRefresh: _loadStats,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with profile
+            _buildModernHeader(),
+
+            const SizedBox(height: 16),
+
+            // Stats Grid (2x2) - Updated with management items
+            _buildStatsGrid(),
+
+            const SizedBox(height: 24),
+
+            // Chart Section
+            _buildChartSection(),
+
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
@@ -225,48 +308,70 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
-          childAspectRatio: 1.2,
+          childAspectRatio: 1.0,
           children: [
             // Total Registered card
             _buildModernStatCard(
               title: 'Total Registered',
-              value: '1,336',
-              progress: 0.7,
-              gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
+              value: _isLoading ? '...' : _totalUsers.toString(),
+              progress: _totalUsers > 0 ? 1.0 : 0.0,
+              gradientColors: [
+                const Color(0xFF3B82F6),
+                const Color(0xFF60A5FA)
+              ],
               icon: Icons.people_alt,
-              onTap: null,
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 3; // Go to Users Management
+                });
+              },
             ),
             // Total Students card
             _buildModernStatCard(
               title: 'Total Students',
-              value: '1,247',
-              progress: 0.3,
-              gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
+              value: _isLoading ? '...' : _totalStudents.toString(),
+              progress: _totalUsers > 0 ? (_totalStudents / _totalUsers) : 0.0,
+              gradientColors: [
+                const Color(0xFF10B981),
+                const Color(0xFF34D399)
+              ],
               icon: Icons.school,
               onTap: () {
-                // Navigation disabled for now
+                setState(() {
+                  _selectedIndex = 3; // Go to Users Management
+                });
               },
             ),
             // Total Teachers card
             _buildModernStatCard(
               title: 'Total Teachers',
-              value: '89',
-              progress: 0.7,
-              gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
+              value: _isLoading ? '...' : _totalTeachers.toString(),
+              progress: _totalUsers > 0 ? (_totalTeachers / _totalUsers) : 0.0,
+              gradientColors: [
+                const Color(0xFFF59E0B),
+                const Color(0xFFFBBF24)
+              ],
               icon: Icons.person_outline,
               onTap: () {
-                // Navigation disabled for now
+                setState(() {
+                  _selectedIndex = 3; // Go to Users Management
+                });
               },
             ),
             // User Management card
             _buildModernStatCard(
-              title: 'User Management',
-              value: '1,336',
-              progress: 0.7,
-              gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
-              icon: Icons.settings_applications,
+              title: 'Admins',
+              value: _isLoading ? '...' : _totalAdmins.toString(),
+              progress: _totalUsers > 0 ? (_totalAdmins / _totalUsers) : 0.0,
+              gradientColors: [
+                const Color(0xFF8B5CF6),
+                const Color(0xFFA78BFA)
+              ],
+              icon: Icons.admin_panel_settings,
               onTap: () {
-                // Navigation disabled for now
+                setState(() {
+                  _selectedIndex = 3; // Go to Users Management
+                });
               },
             ),
           ],
@@ -286,7 +391,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -298,99 +403,99 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
             ),
           ],
         ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: gradientColors,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: gradientColors[0].withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        icon,
-                        color: Colors.white,
-                        size: 24,
-                      ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: gradientColors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF3B82F6),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: gradientColors[0].withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                    fontWeight: FontWeight.w500,
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 20,
                   ),
-                ),
-                const Spacer(),
-                Row(
-                  children: [
-                    Expanded(
-                        child: Container(
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                        child: FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: progress,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: gradientColors,
-                              ),
-                              borderRadius: BorderRadius.circular(3),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: gradientColors[0].withOpacity(0.5),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${(progress * 100).toInt()}%',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF3B82F6),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: gradientColors[0],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const Spacer(),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: progress.clamp(0.0, 1.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: gradientColors,
+                          ),
+                          borderRadius: BorderRadius.circular(3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: gradientColors[0].withOpacity(0.5),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '${(progress * 100).toInt()}%',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: gradientColors[0],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -403,9 +508,9 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
@@ -414,72 +519,72 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
               ),
             ],
           ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Attendance Overview',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF3B82F6),
-                          ),
-                        ),
+                  const Expanded(
+                    child: Text(
+                      'Attendance Overview',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF3B82F6),
                       ),
-                      Flexible(
-                        child: _buildPeriodSelector(),
-                      ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    height: 200,
-                    child: BarChart(
-                      BarChartData(
-                        alignment: BarChartAlignment.spaceAround,
-                        maxY: 100,
-                        barTouchData: BarTouchData(
-                          enabled: true,
-                          touchTooltipData: BarTouchTooltipData(
-                            tooltipBgColor: Colors.white.withOpacity(0.9),
-                            getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                              return BarTooltipItem(
-                                '${rod.toY.round()}%',
-                                TextStyle(
-                                  color: const Color(0xFF1E3A8A),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        titlesData: FlTitlesData(
-                          show: true,
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: (double value, TitleMeta meta) {
-                                String text = '';
-                                switch (value.toInt()) {
-                                  case 0:
-                                    text = 'Mon';
-                                    break;
-                                  case 1:
-                                    text = 'Tue';
-                                    break;
-                                  case 2:
-                                    text = 'Wed';
-                                    break;
-                                  case 3:
-                                    text = 'Thu';
-                                    break;
-                                  case 4:
-                                    text = 'Fri';
-                                    break;
-                                }
+                  Flexible(
+                    child: _buildPeriodSelector(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 200,
+                child: BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    maxY: 100,
+                    barTouchData: BarTouchData(
+                      enabled: true,
+                      touchTooltipData: BarTouchTooltipData(
+                        tooltipBgColor: Colors.white.withOpacity(0.9),
+                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                          return BarTooltipItem(
+                            '${rod.toY.round()}%',
+                            const TextStyle(
+                              color: Color(0xFF1E3A8A),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          getTitlesWidget: (double value, TitleMeta meta) {
+                            String text = '';
+                            switch (value.toInt()) {
+                              case 0:
+                                text = 'Mon';
+                                break;
+                              case 1:
+                                text = 'Tue';
+                                break;
+                              case 2:
+                                text = 'Wed';
+                                break;
+                              case 3:
+                                text = 'Thu';
+                                break;
+                              case 4:
+                                text = 'Fri';
+                                break;
+                            }
                             return Text(
                               text,
                               style: TextStyle(
@@ -512,106 +617,111 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                                 fontSize: 12,
                               ),
                             );
-                              },
-                              reservedSize: 30,
+                          },
+                          reservedSize: 30,
+                        ),
+                      ),
+                    ),
+                    borderData: FlBorderData(
+                      show: false,
+                    ),
+                    barGroups: [
+                      // Monday - Navy blue gradient
+                      BarChartGroupData(
+                        x: 0,
+                        barRods: [
+                          BarChartRodData(
+                            toY: 88,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
                             ),
-                          ),
-                        ),
-                        borderData: FlBorderData(
-                          show: false,
-                        ),
-                        barGroups: [
-                          // Monday - Navy blue gradient
-                          BarChartGroupData(
-                            x: 0,
-                            barRods: [
-                              BarChartRodData(
-                                toY: 88,
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                ),
-                                width: 22,
-                                borderRadius: const BorderRadius.all(Radius.circular(4)),
-                              ),
-                            ],
-                          ),
-                          // Tuesday - Navy blue gradient
-                          BarChartGroupData(
-                            x: 1,
-                            barRods: [
-                              BarChartRodData(
-                                toY: 92,
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                ),
-                                width: 22,
-                                borderRadius: const BorderRadius.all(Radius.circular(4)),
-                              ),
-                            ],
-                          ),
-                          // Wednesday - Navy blue gradient
-                          BarChartGroupData(
-                            x: 2,
-                            barRods: [
-                              BarChartRodData(
-                                toY: 85,
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                ),
-                                width: 22,
-                                borderRadius: const BorderRadius.all(Radius.circular(4)),
-                              ),
-                            ],
-                          ),
-                          // Thursday - Navy blue gradient
-                          BarChartGroupData(
-                            x: 3,
-                            barRods: [
-                              BarChartRodData(
-                                toY: 78,
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                ),
-                                width: 22,
-                                borderRadius: const BorderRadius.all(Radius.circular(4)),
-                              ),
-                            ],
-                          ),
-                          // Friday - Navy blue gradient
-                          BarChartGroupData(
-                            x: 4,
-                            barRods: [
-                              BarChartRodData(
-                                toY: 90,
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                ),
-                                width: 22,
-                                borderRadius: const BorderRadius.all(Radius.circular(4)),
-                              ),
-                            ],
+                            width: 22,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(4)),
                           ),
                         ],
                       ),
-                    ),
+                      // Tuesday - Navy blue gradient
+                      BarChartGroupData(
+                        x: 1,
+                        barRods: [
+                          BarChartRodData(
+                            toY: 92,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                            ),
+                            width: 22,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(4)),
+                          ),
+                        ],
+                      ),
+                      // Wednesday - Navy blue gradient
+                      BarChartGroupData(
+                        x: 2,
+                        barRods: [
+                          BarChartRodData(
+                            toY: 85,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                            ),
+                            width: 22,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(4)),
+                          ),
+                        ],
+                      ),
+                      // Thursday - Navy blue gradient
+                      BarChartGroupData(
+                        x: 3,
+                        barRods: [
+                          BarChartRodData(
+                            toY: 78,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                            ),
+                            width: 22,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(4)),
+                          ),
+                        ],
+                      ),
+                      // Friday - Navy blue gradient
+                      BarChartGroupData(
+                        x: 4,
+                        barRods: [
+                          BarChartRodData(
+                            toY: 90,
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                            ),
+                            width: 22,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(4)),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
+            ],
+          ),
         ),
       ),
     );
   }
-  
+
   Widget _buildPeriodSelector() {
     final periods = ['Today', 'Weekly', 'Monthly'];
     return Wrap(
@@ -621,7 +731,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
         final isSelected = _selectedPeriod == period;
         final blue = const Color(0xFF3B82F6);
         final lightBlue = const Color(0xFF60A5FA);
-        
+
         return GestureDetector(
           onTap: () {
             setState(() {
@@ -641,9 +751,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
               color: isSelected ? null : Colors.grey[200],
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: isSelected
-                    ? blue
-                    : Colors.grey[300]!,
+                color: isSelected ? blue : Colors.grey[300]!,
                 width: isSelected ? 1.5 : 1,
               ),
               boxShadow: isSelected
@@ -673,7 +781,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
   Widget _buildReportsContent() {
     return const ReportsScreen();
   }
-  
+
   Widget _buildClassesContent() {
     return const Center(
       child: Text(
@@ -687,7 +795,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       ),
     );
   }
-  
+
   Widget _buildNotificationCard() {
     return Container(
       width: double.infinity,
@@ -703,26 +811,26 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
           ),
         ],
       ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3B82F6),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.notifications_active,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.notifications_active,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 const Text(
                   "New System Update Available",
                   style: TextStyle(
@@ -739,21 +847,21 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                     color: Colors.grey[600],
                   ),
                 ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(
-                  Icons.arrow_forward_ios,
-                  color: Color(0xFF3B82F6),
-                  size: 16,
-                ),
-                onPressed: () {
-                  // Handle notification tap
-                },
-              ),
-            ],
+              ],
+            ),
           ),
+          IconButton(
+            icon: const Icon(
+              Icons.arrow_forward_ios,
+              color: Color(0xFF3B82F6),
+              size: 16,
+            ),
+            onPressed: () {
+              // Handle notification tap
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -774,41 +882,41 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
         ],
       ),
       child: BottomNavigationBar(
-            currentIndex: _selectedIndex,
-            onTap: (index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.transparent,
-            selectedItemColor: Colors.white,
-            unselectedItemColor: Colors.white.withOpacity(0.7),
-            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard),
-                label: 'Dashboard',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.assignment),
-                label: 'Enrollment',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.class_),
-                label: 'Classes',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.people),
-                label: 'Users',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person),
-                label: 'Profile',
-              ),
-            ],
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.transparent,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white.withOpacity(0.7),
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment),
+            label: 'Enrollment',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.class_),
+            label: 'Classes',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: 'Users',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
     );
   }
 }
