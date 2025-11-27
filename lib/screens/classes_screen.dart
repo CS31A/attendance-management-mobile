@@ -4473,6 +4473,9 @@ class _AddScheduleModalContentState extends State<_AddScheduleModalContent> {
   TimeOfDay? _timeIn;
   TimeOfDay? _timeOut;
 
+  final TextEditingController _timeInController = TextEditingController();
+  final TextEditingController _timeOutController = TextEditingController();
+
   bool _isCreating = false;
   Map<String, String?> _fieldErrors = {};
 
@@ -4486,6 +4489,13 @@ class _AddScheduleModalContentState extends State<_AddScheduleModalContent> {
     'Sunday'
   ];
 
+  @override
+  void dispose() {
+    _timeInController.dispose();
+    _timeOutController.dispose();
+    super.dispose();
+  }
+
   Future<void> _selectTime(bool isTimeIn) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
@@ -4497,8 +4507,10 @@ class _AddScheduleModalContentState extends State<_AddScheduleModalContent> {
       setState(() {
         if (isTimeIn) {
           _timeIn = picked;
+          _timeInController.text = picked.format(context);
         } else {
           _timeOut = picked;
+          _timeOutController.text = picked.format(context);
         }
       });
     }
@@ -4607,7 +4619,7 @@ class _AddScheduleModalContentState extends State<_AddScheduleModalContent> {
               DropdownButtonFormField<int>(
                 value: _selectedSubjectId,
                 decoration: InputDecoration(
-                  labelText: 'Subject',
+                  hintText: 'Subject',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.2),
                   border: OutlineInputBorder(
@@ -4634,7 +4646,7 @@ class _AddScheduleModalContentState extends State<_AddScheduleModalContent> {
               DropdownButtonFormField<int>(
                 value: _selectedClassroomId,
                 decoration: InputDecoration(
-                  labelText: 'Classroom',
+                  hintText: 'Classroom',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.2),
                   border: OutlineInputBorder(
@@ -4661,7 +4673,7 @@ class _AddScheduleModalContentState extends State<_AddScheduleModalContent> {
               DropdownButtonFormField<int>(
                 value: _selectedSectionId,
                 decoration: InputDecoration(
-                  labelText: 'Section',
+                  hintText: 'Section',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.2),
                   border: OutlineInputBorder(
@@ -4688,7 +4700,7 @@ class _AddScheduleModalContentState extends State<_AddScheduleModalContent> {
               DropdownButtonFormField<int>(
                 value: _selectedInstructorId,
                 decoration: InputDecoration(
-                  labelText: 'Instructor',
+                  hintText: 'Instructor',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.2),
                   border: OutlineInputBorder(
@@ -4717,7 +4729,7 @@ class _AddScheduleModalContentState extends State<_AddScheduleModalContent> {
               DropdownButtonFormField<String>(
                 value: _selectedDayOfWeek,
                 decoration: InputDecoration(
-                  labelText: 'Day of Week',
+                  hintText: 'Day of Week',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.2),
                   border: OutlineInputBorder(
@@ -4744,44 +4756,42 @@ class _AddScheduleModalContentState extends State<_AddScheduleModalContent> {
               Row(
                 children: [
                   Expanded(
-                    child: InkWell(
+                    child: TextFormField(
+                      controller: _timeInController,
+                      readOnly: true,
                       onTap: () => _selectTime(true),
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: 'Start Time',
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.2),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                        child: Text(
-                          _timeIn?.format(context) ?? 'Select Time',
-                          style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Start Time',
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.2),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
                         ),
                       ),
+                      style: const TextStyle(color: Colors.white),
+                      validator: (value) =>
+                          value == null || value.isEmpty ? 'Required' : null,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: InkWell(
+                    child: TextFormField(
+                      controller: _timeOutController,
+                      readOnly: true,
                       onTap: () => _selectTime(false),
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: 'End Time',
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.2),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                        child: Text(
-                          _timeOut?.format(context) ?? 'Select Time',
-                          style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'End Time',
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.2),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
                         ),
                       ),
+                      style: const TextStyle(color: Colors.white),
+                      validator: (value) =>
+                          value == null || value.isEmpty ? 'Required' : null,
                     ),
                   ),
                 ],
@@ -4861,6 +4871,9 @@ class _EditScheduleModalContentState extends State<_EditScheduleModalContent> {
   TimeOfDay? _timeIn;
   TimeOfDay? _timeOut;
 
+  final TextEditingController _timeInController = TextEditingController();
+  final TextEditingController _timeOutController = TextEditingController();
+
   bool _isUpdating = false;
   Map<String, String?> _fieldErrors = {};
 
@@ -4880,6 +4893,13 @@ class _EditScheduleModalContentState extends State<_EditScheduleModalContent> {
     _initializeFields();
   }
 
+  @override
+  void dispose() {
+    _timeInController.dispose();
+    _timeOutController.dispose();
+    super.dispose();
+  }
+
   void _initializeFields() {
     final schedule = widget.schedule;
     _selectedSubjectId = schedule['subject']?['id'];
@@ -4890,9 +4910,11 @@ class _EditScheduleModalContentState extends State<_EditScheduleModalContent> {
 
     if (schedule['timeIn'] != null) {
       _timeIn = _parseTime(schedule['timeIn']);
+      _timeInController.text = _timeIn!.format(context);
     }
     if (schedule['timeOut'] != null) {
       _timeOut = _parseTime(schedule['timeOut']);
+      _timeOutController.text = _timeOut!.format(context);
     }
   }
 
@@ -4916,8 +4938,10 @@ class _EditScheduleModalContentState extends State<_EditScheduleModalContent> {
       setState(() {
         if (isTimeIn) {
           _timeIn = picked;
+          _timeInController.text = picked.format(context);
         } else {
           _timeOut = picked;
+          _timeOutController.text = picked.format(context);
         }
       });
     }
@@ -5027,7 +5051,7 @@ class _EditScheduleModalContentState extends State<_EditScheduleModalContent> {
               DropdownButtonFormField<int>(
                 value: _selectedSubjectId,
                 decoration: InputDecoration(
-                  labelText: 'Subject',
+                  hintText: 'Subject',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.2),
                   border: OutlineInputBorder(
@@ -5054,7 +5078,7 @@ class _EditScheduleModalContentState extends State<_EditScheduleModalContent> {
               DropdownButtonFormField<int>(
                 value: _selectedClassroomId,
                 decoration: InputDecoration(
-                  labelText: 'Classroom',
+                  hintText: 'Classroom',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.2),
                   border: OutlineInputBorder(
@@ -5081,7 +5105,7 @@ class _EditScheduleModalContentState extends State<_EditScheduleModalContent> {
               DropdownButtonFormField<int>(
                 value: _selectedSectionId,
                 decoration: InputDecoration(
-                  labelText: 'Section',
+                  hintText: 'Section',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.2),
                   border: OutlineInputBorder(
@@ -5108,7 +5132,7 @@ class _EditScheduleModalContentState extends State<_EditScheduleModalContent> {
               DropdownButtonFormField<int>(
                 value: _selectedInstructorId,
                 decoration: InputDecoration(
-                  labelText: 'Instructor',
+                  hintText: 'Instructor',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.2),
                   border: OutlineInputBorder(
@@ -5137,7 +5161,7 @@ class _EditScheduleModalContentState extends State<_EditScheduleModalContent> {
               DropdownButtonFormField<String>(
                 value: _selectedDayOfWeek,
                 decoration: InputDecoration(
-                  labelText: 'Day of Week',
+                  hintText: 'Day of Week',
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.2),
                   border: OutlineInputBorder(
@@ -5164,44 +5188,42 @@ class _EditScheduleModalContentState extends State<_EditScheduleModalContent> {
               Row(
                 children: [
                   Expanded(
-                    child: InkWell(
+                    child: TextFormField(
+                      controller: _timeInController,
+                      readOnly: true,
                       onTap: () => _selectTime(true),
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: 'Start Time',
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.2),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                        child: Text(
-                          _timeIn?.format(context) ?? 'Select Time',
-                          style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Start Time',
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.2),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
                         ),
                       ),
+                      style: const TextStyle(color: Colors.white),
+                      validator: (value) =>
+                          value == null || value.isEmpty ? 'Required' : null,
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: InkWell(
+                    child: TextFormField(
+                      controller: _timeOutController,
+                      readOnly: true,
                       onTap: () => _selectTime(false),
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: 'End Time',
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.2),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                        child: Text(
-                          _timeOut?.format(context) ?? 'Select Time',
-                          style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'End Time',
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.2),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
                         ),
                       ),
+                      style: const TextStyle(color: Colors.white),
+                      validator: (value) =>
+                          value == null || value.isEmpty ? 'Required' : null,
                     ),
                   ),
                 ],
