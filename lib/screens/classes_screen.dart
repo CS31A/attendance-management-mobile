@@ -4,52 +4,75 @@ import '../services/api_service.dart';
 
 class ClassesScreen extends StatefulWidget {
   final VoidCallback? onBackPressed;
-  
+
   const ClassesScreen({super.key, this.onBackPressed});
 
   @override
   State<ClassesScreen> createState() => _ClassesScreenState();
 }
 
-class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProviderStateMixin {
+class _ClassesScreenState extends State<ClassesScreen>
+    with SingleTickerProviderStateMixin {
   final ApiService _apiService = ApiService();
-  
+
   late TabController _tabController;
-  
+
   // Classrooms
   List<Map<String, dynamic>> _classrooms = [];
   bool _isLoadingClassrooms = false;
   String? _classroomsErrorMessage;
-  
+
   // Courses
   List<Map<String, dynamic>> _courses = [];
   bool _isLoadingCourses = false;
   String? _coursesErrorMessage;
-  
+
   // Sections
   List<Map<String, dynamic>> _sections = [];
   bool _isLoadingSections = false;
   String? _sectionsErrorMessage;
-  
+
   // Subjects
   List<Map<String, dynamic>> _subjects = [];
   bool _isLoadingSubjects = false;
   String? _subjectsErrorMessage;
 
+  // Schedules
+  List<Map<String, dynamic>> _schedules = [];
+  bool _isLoadingSchedules = false;
+  String? _schedulesErrorMessage;
+
+  // Instructors
+  List<Map<String, dynamic>> _instructors = [];
+  bool _isLoadingInstructors = false;
+  String? _instructorsErrorMessage;
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
-        if (_tabController.index == 0 && _classrooms.isEmpty && !_isLoadingClassrooms) {
+        if (_tabController.index == 0 &&
+            _classrooms.isEmpty &&
+            !_isLoadingClassrooms) {
           _loadClassrooms();
-        } else if (_tabController.index == 1 && _courses.isEmpty && !_isLoadingCourses) {
+        } else if (_tabController.index == 1 &&
+            _courses.isEmpty &&
+            !_isLoadingCourses) {
           _loadCourses();
-        } else if (_tabController.index == 2 && _sections.isEmpty && !_isLoadingSections) {
+        } else if (_tabController.index == 2 &&
+            _sections.isEmpty &&
+            !_isLoadingSections) {
           _loadSections();
-        } else if (_tabController.index == 3 && _subjects.isEmpty && !_isLoadingSubjects) {
+        } else if (_tabController.index == 3 &&
+            _subjects.isEmpty &&
+            !_isLoadingSubjects) {
           _loadSubjects();
+        } else if (_tabController.index == 4 &&
+            _schedules.isEmpty &&
+            !_isLoadingSchedules) {
+          _loadSchedules();
         }
       }
     });
@@ -85,7 +108,8 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
         }
       } else {
         setState(() {
-          _classroomsErrorMessage = response['message'] ?? 'Failed to load classrooms';
+          _classroomsErrorMessage =
+              response['message'] ?? 'Failed to load classrooms';
           _isLoadingClassrooms = false;
         });
       }
@@ -120,7 +144,8 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
         }
       } else {
         setState(() {
-          _coursesErrorMessage = response['message'] ?? 'Failed to load courses';
+          _coursesErrorMessage =
+              response['message'] ?? 'Failed to load courses';
           _isLoadingCourses = false;
         });
       }
@@ -136,6 +161,79 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
   int get _totalCoursesCount => _courses.length;
   int get _totalSectionsCount => _sections.length;
   int get _totalSubjectsCount => _subjects.length;
+  int get _totalSchedulesCount => _schedules.length;
+
+  Future<void> _loadSchedules() async {
+    setState(() {
+      _isLoadingSchedules = true;
+      _schedulesErrorMessage = null;
+    });
+
+    try {
+      final response = await _apiService.getSchedules();
+      if (response['success'] == true) {
+        final data = response['data'];
+        if (data is List) {
+          setState(() {
+            _schedules = List<Map<String, dynamic>>.from(data);
+            _isLoadingSchedules = false;
+          });
+        } else {
+          setState(() {
+            _schedules = [];
+            _isLoadingSchedules = false;
+          });
+        }
+      } else {
+        setState(() {
+          _schedulesErrorMessage =
+              response['message'] ?? 'Failed to load schedules';
+          _isLoadingSchedules = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _schedulesErrorMessage = 'Failed to load schedules: $e';
+        _isLoadingSchedules = false;
+      });
+    }
+  }
+
+  Future<void> _loadInstructors() async {
+    setState(() {
+      _isLoadingInstructors = true;
+      _instructorsErrorMessage = null;
+    });
+
+    try {
+      final response = await _apiService.getInstructors();
+      if (response['success'] == true) {
+        final data = response['data'];
+        if (data is List) {
+          setState(() {
+            _instructors = List<Map<String, dynamic>>.from(data);
+            _isLoadingInstructors = false;
+          });
+        } else {
+          setState(() {
+            _instructors = [];
+            _isLoadingInstructors = false;
+          });
+        }
+      } else {
+        setState(() {
+          _instructorsErrorMessage =
+              response['message'] ?? 'Failed to load instructors';
+          _isLoadingInstructors = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _instructorsErrorMessage = 'Failed to load instructors: $e';
+        _isLoadingInstructors = false;
+      });
+    }
+  }
 
   Future<void> _loadSubjects() async {
     setState(() {
@@ -160,7 +258,8 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
         }
       } else {
         setState(() {
-          _subjectsErrorMessage = response['message'] ?? 'Failed to load subjects';
+          _subjectsErrorMessage =
+              response['message'] ?? 'Failed to load subjects';
           _isLoadingSubjects = false;
         });
       }
@@ -195,7 +294,8 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
         }
       } else {
         setState(() {
-          _sectionsErrorMessage = response['message'] ?? 'Failed to load sections';
+          _sectionsErrorMessage =
+              response['message'] ?? 'Failed to load sections';
           _isLoadingSections = false;
         });
       }
@@ -229,10 +329,10 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
             children: [
               // Header
               _buildHeader(),
-              
+
               // Tabs
               _buildTabBar(),
-              
+
               // Content
               Expanded(
                 child: TabBarView(
@@ -241,38 +341,57 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                     // Classrooms Tab
                     _isLoadingClassrooms
                         ? const Center(
-                            child: CircularProgressIndicator(color: Colors.white),
+                            child:
+                                CircularProgressIndicator(color: Colors.white),
                           )
                         : _classroomsErrorMessage != null
-                            ? _buildErrorState(_classroomsErrorMessage!, _loadClassrooms)
+                            ? _buildErrorState(
+                                _classroomsErrorMessage!, _loadClassrooms)
                             : _buildClassroomsContent(),
-                    
+
                     // Courses Tab
                     _isLoadingCourses
                         ? const Center(
-                            child: CircularProgressIndicator(color: Colors.white),
+                            child:
+                                CircularProgressIndicator(color: Colors.white),
                           )
                         : _coursesErrorMessage != null
-                            ? _buildErrorState(_coursesErrorMessage!, _loadCourses)
+                            ? _buildErrorState(
+                                _coursesErrorMessage!, _loadCourses)
                             : _buildCoursesContent(),
-                    
+
                     // Sections Tab
                     _isLoadingSections
                         ? const Center(
-                            child: CircularProgressIndicator(color: Colors.white),
+                            child:
+                                CircularProgressIndicator(color: Colors.white),
                           )
                         : _sectionsErrorMessage != null
-                            ? _buildErrorState(_sectionsErrorMessage!, _loadSections)
+                            ? _buildErrorState(
+                                _sectionsErrorMessage!, _loadSections)
                             : _buildSectionsContent(),
-                    
+
                     // Subjects Tab
                     _isLoadingSubjects
                         ? const Center(
-                            child: CircularProgressIndicator(color: Colors.white),
+                            child:
+                                CircularProgressIndicator(color: Colors.white),
                           )
                         : _subjectsErrorMessage != null
-                            ? _buildErrorState(_subjectsErrorMessage!, _loadSubjects)
+                            ? _buildErrorState(
+                                _subjectsErrorMessage!, _loadSubjects)
                             : _buildSubjectsContent(),
+
+                    // Schedules Tab
+                    _isLoadingSchedules
+                        ? const Center(
+                            child:
+                                CircularProgressIndicator(color: Colors.white),
+                          )
+                        : _schedulesErrorMessage != null
+                            ? _buildErrorState(
+                                _schedulesErrorMessage!, _loadSchedules)
+                            : _buildSchedulesContent(),
                   ],
                 ),
               ),
@@ -338,8 +457,10 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                 _showAddCourseModal();
               } else if (_tabController.index == 2) {
                 _showAddSectionModal();
-              } else {
+              } else if (_tabController.index == 3) {
                 _showAddSubjectModal();
+              } else {
+                _showAddScheduleModal();
               }
             },
             icon: const Icon(Icons.add, color: Colors.white, size: 28),
@@ -381,6 +502,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
           Tab(text: 'Courses'),
           Tab(text: 'Sections'),
           Tab(text: 'Subjects'),
+          Tab(text: 'Schedules'),
         ],
       ),
     );
@@ -432,7 +554,8 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF3B82F6),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -467,12 +590,12 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           // Stats Grid
           _buildClassroomsStatsGrid(),
-          
+
           const SizedBox(height: 24),
-          
+
           // Classrooms List Section
           const Text(
             'Classrooms List',
@@ -483,7 +606,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Classrooms Cards
           _buildClassroomsList(),
         ],
@@ -513,12 +636,12 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           // Stats Grid
           _buildCoursesStatsGrid(),
-          
+
           const SizedBox(height: 24),
-          
+
           // Courses List Section
           const Text(
             'Courses List',
@@ -529,7 +652,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Courses Cards
           _buildCoursesList(),
         ],
@@ -1067,7 +1190,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
 
   void _showDeleteClassroomConfirmation(Map<String, dynamic> classroom) {
     final name = classroom['name']?.toString() ?? 'this classroom';
-    
+
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
@@ -1211,7 +1334,8 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(response['message'] ?? 'Failed to delete classroom'),
+              content:
+                  Text(response['message'] ?? 'Failed to delete classroom'),
               backgroundColor: Colors.red,
             ),
           );
@@ -1252,12 +1376,12 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           // Stats Grid
           _buildSectionsStatsGrid(),
-          
+
           const SizedBox(height: 24),
-          
+
           // Sections List Section
           const Text(
             'Sections List',
@@ -1268,9 +1392,254 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Sections Cards
           _buildSectionsList(),
+        ],
+      ),
+    );
+  }
+
+  // Schedules Content
+  Widget _buildSchedulesContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Schedules Overview
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Row(
+              children: [
+                const Text(
+                  'Schedules Overview',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Stats Grid
+          _buildSchedulesStatsGrid(),
+
+          const SizedBox(height: 24),
+
+          // Schedules List Section
+          const Text(
+            'Schedules List',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Schedules Cards
+          _buildSchedulesList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSchedulesStatsGrid() {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 1.2,
+      children: [
+        _buildStatCard(
+          title: 'Total Schedules',
+          value: _totalSchedulesCount.toString(),
+          progress: _totalSchedulesCount > 0 ? 1.0 : 0.0,
+          gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
+          icon: Icons.calendar_today,
+        ),
+        _buildStatCard(
+          title: 'Active Schedules',
+          value: _totalSchedulesCount.toString(),
+          progress: _totalSchedulesCount > 0 ? 1.0 : 0.0,
+          gradientColors: [const Color(0xFF3B82F6), const Color(0xFF60A5FA)],
+          icon: Icons.event,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSchedulesList() {
+    if (_schedules.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No schedules available',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add a new schedule to get started',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _schedules.length,
+      itemBuilder: (context, index) {
+        final schedule = _schedules[index];
+        return _buildScheduleCard(schedule);
+      },
+    );
+  }
+
+  Widget _buildScheduleCard(Map<String, dynamic> schedule) {
+    final id = schedule['id']?.toString() ?? 'N/A';
+    final dayOfWeek = schedule['dayOfWeek']?.toString() ?? 'N/A';
+    final timeIn = schedule['timeIn']?.toString() ?? 'N/A';
+    final timeOut = schedule['timeOut']?.toString() ?? 'N/A';
+    final subject =
+        schedule['subject']?['name']?.toString() ?? 'Unknown Subject';
+    final classroom =
+        schedule['classroom']?['name']?.toString() ?? 'Unknown Room';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Schedule Icon
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF3B82F6),
+                  Color(0xFF60A5FA),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  dayOfWeek.substring(0, 3).toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Icon(
+                  Icons.calendar_today,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Schedule Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  subject,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E3A8A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$timeIn - $timeOut',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF3B82F6),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$classroom • ID: $id',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Action Buttons
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                onPressed: () => _showEditScheduleModal(schedule),
+                icon: const Icon(Icons.edit, color: Color(0xFF3B82F6)),
+                tooltip: 'Edit',
+              ),
+              IconButton(
+                onPressed: () => _showDeleteScheduleConfirmation(schedule),
+                icon: const Icon(Icons.delete, color: Colors.red),
+                tooltip: 'Delete',
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -1362,7 +1731,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
     final id = section['id']?.toString() ?? 'N/A';
     final name = section['name']?.toString() ?? 'Unnamed';
     final courseId = section['courseId']?.toString() ?? 'N/A';
-    
+
     // Find course name
     String courseName = 'Course ID: $courseId';
     final course = _courses.firstWhere(
@@ -1456,13 +1825,298 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
     );
   }
 
+  void _showAddScheduleModal() async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await Future.wait([
+        if (_subjects.isEmpty) _loadSubjects(),
+        if (_classrooms.isEmpty) _loadClassrooms(),
+        if (_courses.isEmpty) _loadCourses(),
+        if (_sections.isEmpty) _loadSections(),
+        if (_instructors.isEmpty) _loadInstructors(),
+      ]);
+    } finally {
+      // Close loading indicator
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    }
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF3B82F6),
+                Color(0xFF60A5FA),
+              ],
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: _AddScheduleModalContent(
+            subjects: _subjects,
+            classrooms: _classrooms,
+            sections: _sections,
+            instructors: _instructors,
+            onScheduleCreated: () => _loadSchedules(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditScheduleModal(Map<String, dynamic> schedule) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await Future.wait([
+        if (_subjects.isEmpty) _loadSubjects(),
+        if (_classrooms.isEmpty) _loadClassrooms(),
+        if (_courses.isEmpty) _loadCourses(),
+        if (_sections.isEmpty) _loadSections(),
+        if (_instructors.isEmpty) _loadInstructors(),
+      ]);
+    } finally {
+      // Close loading indicator
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    }
+
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        child: Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF3B82F6),
+                Color(0xFF60A5FA),
+              ],
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: _EditScheduleModalContent(
+            schedule: schedule,
+            subjects: _subjects,
+            classrooms: _classrooms,
+            sections: _sections,
+            instructors: _instructors,
+            onScheduleUpdated: () => _loadSchedules(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteScheduleConfirmation(Map<String, dynamic> schedule) {
+    final subjectName =
+        schedule['subject']?['name']?.toString() ?? 'this schedule';
+    final day = schedule['dayOfWeek']?.toString() ?? '';
+    final time = schedule['timeIn']?.toString() ?? '';
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF1E3A8A),
+                Color(0xFF3B82F6),
+                Color(0xFF60A5FA),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 30,
+                offset: const Offset(0, 15),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ACLC Logo
+              SizedBox(
+                width: 50,
+                height: 50,
+                child: Image.asset(
+                  'assets/acla logo.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.school,
+                        color: Colors.white,
+                        size: 30,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Delete Schedule',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Are you sure you want to delete the schedule for $subjectName on $day at $time? This action cannot be undone.',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white, width: 2),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        final response =
+                            await _apiService.deleteSchedule(schedule['id']);
+                        if (response['success'] == true) {
+                          _loadSchedules();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Schedule deleted successfully'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        } else {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(response['message'] ??
+                                    'Failed to delete schedule'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF3B82F6),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Delete',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // Sections Modals
   void _showAddSectionModal() async {
     // Ensure courses are loaded before showing modal
     if (_courses.isEmpty && !_isLoadingCourses) {
       await _loadCourses();
     }
-    
+
     if (_courses.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1472,7 +2126,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
       );
       return;
     }
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1514,7 +2168,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
     if (_courses.isEmpty && !_isLoadingCourses) {
       await _loadCourses();
     }
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1554,7 +2208,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
 
   void _showDeleteSectionConfirmation(Map<String, dynamic> section) {
     final name = section['name']?.toString() ?? 'this section';
-    
+
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
@@ -1684,8 +2338,25 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
   }
 
   Future<void> _handleDeleteSection(Map<String, dynamic> section) async {
-    final id = section['id'];
+    var id = section['id'];
     if (id == null) return;
+
+    // Ensure id is int
+    if (id is String) {
+      id = int.tryParse(id);
+    }
+
+    if (id is! int) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invalid section ID'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
 
     try {
       final response = await _apiService.deleteSection(id as int);
@@ -1739,12 +2410,12 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
               ],
             ),
           ),
-          
+
           // Stats Grid
           _buildSubjectsStatsGrid(),
-          
+
           const SizedBox(height: 24),
-          
+
           // Subjects List Section
           const Text(
             'Subjects List',
@@ -1755,7 +2426,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Subjects Cards
           _buildSubjectsList(),
         ],
@@ -2009,7 +2680,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
 
   void _showDeleteSubjectConfirmation(Map<String, dynamic> subject) {
     final name = subject['name']?.toString() ?? 'this subject';
-    
+
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
@@ -2247,7 +2918,7 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
 
   void _showDeleteCourseConfirmation(Map<String, dynamic> course) {
     final name = course['name']?.toString() ?? 'this course';
-    
+
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
@@ -2487,7 +3158,8 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: const Color(0xFF3B82F6),
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -2512,11 +3184,12 @@ class _ClassesScreenState extends State<ClassesScreen> with SingleTickerProvider
 // Add Classroom Modal
 class _AddClassroomModalContent extends StatefulWidget {
   final VoidCallback? onClassroomCreated;
-  
+
   const _AddClassroomModalContent({this.onClassroomCreated});
 
   @override
-  State<_AddClassroomModalContent> createState() => _AddClassroomModalContentState();
+  State<_AddClassroomModalContent> createState() =>
+      _AddClassroomModalContentState();
 }
 
 class _AddClassroomModalContentState extends State<_AddClassroomModalContent> {
@@ -2542,7 +3215,8 @@ class _AddClassroomModalContentState extends State<_AddClassroomModalContent> {
       _fieldErrors = {};
     });
 
-    final response = await _apiService.createClassroom(_nameController.text.trim());
+    final response =
+        await _apiService.createClassroom(_nameController.text.trim());
 
     setState(() {
       _isCreating = false;
@@ -2554,17 +3228,18 @@ class _AddClassroomModalContentState extends State<_AddClassroomModalContent> {
         Navigator.of(context).pop();
       }
     } else {
-      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
-      
+      Map<String, List<String>>? apiErrors =
+          response['errors'] as Map<String, List<String>>?;
+
       setState(() {
         _fieldErrors = {};
         if (apiErrors != null && apiErrors.containsKey('Name')) {
           _fieldErrors['name'] = apiErrors['Name']!.first;
         }
       });
-      
+
       _formKey.currentState?.validate();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2607,7 +3282,7 @@ class _AddClassroomModalContentState extends State<_AddClassroomModalContent> {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Name Field
               TextFormField(
                 controller: _nameController,
@@ -2623,7 +3298,8 @@ class _AddClassroomModalContentState extends State<_AddClassroomModalContent> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -2648,7 +3324,7 @@ class _AddClassroomModalContentState extends State<_AddClassroomModalContent> {
                 },
               ),
               const SizedBox(height: 32),
-              
+
               // Create Button
               ElevatedButton(
                 onPressed: _isCreating ? null : _handleCreate,
@@ -2667,7 +3343,8 @@ class _AddClassroomModalContentState extends State<_AddClassroomModalContent> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
                         ),
                       )
                     : const Text(
@@ -2690,17 +3367,19 @@ class _AddClassroomModalContentState extends State<_AddClassroomModalContent> {
 class _EditClassroomModalContent extends StatefulWidget {
   final Map<String, dynamic> classroom;
   final VoidCallback? onClassroomUpdated;
-  
+
   const _EditClassroomModalContent({
     required this.classroom,
     this.onClassroomUpdated,
   });
 
   @override
-  State<_EditClassroomModalContent> createState() => _EditClassroomModalContentState();
+  State<_EditClassroomModalContent> createState() =>
+      _EditClassroomModalContentState();
 }
 
-class _EditClassroomModalContentState extends State<_EditClassroomModalContent> {
+class _EditClassroomModalContentState
+    extends State<_EditClassroomModalContent> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final ApiService _apiService = ApiService();
   late final TextEditingController _nameController;
@@ -2710,7 +3389,8 @@ class _EditClassroomModalContentState extends State<_EditClassroomModalContent> 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.classroom['name']?.toString() ?? '');
+    _nameController =
+        TextEditingController(text: widget.classroom['name']?.toString() ?? '');
   }
 
   @override
@@ -2730,7 +3410,8 @@ class _EditClassroomModalContentState extends State<_EditClassroomModalContent> 
     });
 
     final id = widget.classroom['id'] as int;
-    final response = await _apiService.updateClassroom(id, _nameController.text.trim());
+    final response =
+        await _apiService.updateClassroom(id, _nameController.text.trim());
 
     setState(() {
       _isUpdating = false;
@@ -2742,17 +3423,18 @@ class _EditClassroomModalContentState extends State<_EditClassroomModalContent> 
         Navigator.of(context).pop();
       }
     } else {
-      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
-      
+      Map<String, List<String>>? apiErrors =
+          response['errors'] as Map<String, List<String>>?;
+
       setState(() {
         _fieldErrors = {};
         if (apiErrors != null && apiErrors.containsKey('Name')) {
           _fieldErrors['name'] = apiErrors['Name']!.first;
         }
       });
-      
+
       _formKey.currentState?.validate();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2795,7 +3477,7 @@ class _EditClassroomModalContentState extends State<_EditClassroomModalContent> 
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Name Field
               TextFormField(
                 controller: _nameController,
@@ -2811,7 +3493,8 @@ class _EditClassroomModalContentState extends State<_EditClassroomModalContent> 
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -2836,7 +3519,7 @@ class _EditClassroomModalContentState extends State<_EditClassroomModalContent> 
                 },
               ),
               const SizedBox(height: 32),
-              
+
               // Update Button
               ElevatedButton(
                 onPressed: _isUpdating ? null : _handleUpdate,
@@ -2855,7 +3538,8 @@ class _EditClassroomModalContentState extends State<_EditClassroomModalContent> 
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
                         ),
                       )
                     : const Text(
@@ -2877,7 +3561,7 @@ class _EditClassroomModalContentState extends State<_EditClassroomModalContent> 
 // Add Course Modal
 class _AddCourseModalContent extends StatefulWidget {
   final VoidCallback? onCourseCreated;
-  
+
   const _AddCourseModalContent({this.onCourseCreated});
 
   @override
@@ -2907,7 +3591,8 @@ class _AddCourseModalContentState extends State<_AddCourseModalContent> {
       _fieldErrors = {};
     });
 
-    final response = await _apiService.createCourse(_nameController.text.trim());
+    final response =
+        await _apiService.createCourse(_nameController.text.trim());
 
     setState(() {
       _isCreating = false;
@@ -2919,17 +3604,18 @@ class _AddCourseModalContentState extends State<_AddCourseModalContent> {
         Navigator.of(context).pop();
       }
     } else {
-      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
-      
+      Map<String, List<String>>? apiErrors =
+          response['errors'] as Map<String, List<String>>?;
+
       setState(() {
         _fieldErrors = {};
         if (apiErrors != null && apiErrors.containsKey('Name')) {
           _fieldErrors['name'] = apiErrors['Name']!.first;
         }
       });
-      
+
       _formKey.currentState?.validate();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2972,7 +3658,7 @@ class _AddCourseModalContentState extends State<_AddCourseModalContent> {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Name Field
               TextFormField(
                 controller: _nameController,
@@ -2988,7 +3674,8 @@ class _AddCourseModalContentState extends State<_AddCourseModalContent> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -3013,7 +3700,7 @@ class _AddCourseModalContentState extends State<_AddCourseModalContent> {
                 },
               ),
               const SizedBox(height: 32),
-              
+
               // Create Button
               ElevatedButton(
                 onPressed: _isCreating ? null : _handleCreate,
@@ -3032,7 +3719,8 @@ class _AddCourseModalContentState extends State<_AddCourseModalContent> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
                         ),
                       )
                     : const Text(
@@ -3055,14 +3743,15 @@ class _AddCourseModalContentState extends State<_AddCourseModalContent> {
 class _EditCourseModalContent extends StatefulWidget {
   final Map<String, dynamic> course;
   final VoidCallback? onCourseUpdated;
-  
+
   const _EditCourseModalContent({
     required this.course,
     this.onCourseUpdated,
   });
 
   @override
-  State<_EditCourseModalContent> createState() => _EditCourseModalContentState();
+  State<_EditCourseModalContent> createState() =>
+      _EditCourseModalContentState();
 }
 
 class _EditCourseModalContentState extends State<_EditCourseModalContent> {
@@ -3075,7 +3764,8 @@ class _EditCourseModalContentState extends State<_EditCourseModalContent> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.course['name']?.toString() ?? '');
+    _nameController =
+        TextEditingController(text: widget.course['name']?.toString() ?? '');
   }
 
   @override
@@ -3095,7 +3785,8 @@ class _EditCourseModalContentState extends State<_EditCourseModalContent> {
     });
 
     final id = widget.course['id'] as int;
-    final response = await _apiService.updateCourse(id, _nameController.text.trim());
+    final response =
+        await _apiService.updateCourse(id, _nameController.text.trim());
 
     setState(() {
       _isUpdating = false;
@@ -3107,17 +3798,18 @@ class _EditCourseModalContentState extends State<_EditCourseModalContent> {
         Navigator.of(context).pop();
       }
     } else {
-      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
-      
+      Map<String, List<String>>? apiErrors =
+          response['errors'] as Map<String, List<String>>?;
+
       setState(() {
         _fieldErrors = {};
         if (apiErrors != null && apiErrors.containsKey('Name')) {
           _fieldErrors['name'] = apiErrors['Name']!.first;
         }
       });
-      
+
       _formKey.currentState?.validate();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3160,7 +3852,7 @@ class _EditCourseModalContentState extends State<_EditCourseModalContent> {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Name Field
               TextFormField(
                 controller: _nameController,
@@ -3176,7 +3868,8 @@ class _EditCourseModalContentState extends State<_EditCourseModalContent> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -3201,7 +3894,7 @@ class _EditCourseModalContentState extends State<_EditCourseModalContent> {
                 },
               ),
               const SizedBox(height: 32),
-              
+
               // Update Button
               ElevatedButton(
                 onPressed: _isUpdating ? null : _handleUpdate,
@@ -3220,7 +3913,8 @@ class _EditCourseModalContentState extends State<_EditCourseModalContent> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
                         ),
                       )
                     : const Text(
@@ -3243,14 +3937,15 @@ class _EditCourseModalContentState extends State<_EditCourseModalContent> {
 class _AddSectionModalContent extends StatefulWidget {
   final List<Map<String, dynamic>> courses;
   final VoidCallback? onSectionCreated;
-  
+
   const _AddSectionModalContent({
     required this.courses,
     this.onSectionCreated,
   });
 
   @override
-  State<_AddSectionModalContent> createState() => _AddSectionModalContentState();
+  State<_AddSectionModalContent> createState() =>
+      _AddSectionModalContentState();
 }
 
 class _AddSectionModalContentState extends State<_AddSectionModalContent> {
@@ -3299,8 +3994,9 @@ class _AddSectionModalContentState extends State<_AddSectionModalContent> {
         Navigator.of(context).pop();
       }
     } else {
-      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
-      
+      Map<String, List<String>>? apiErrors =
+          response['errors'] as Map<String, List<String>>?;
+
       setState(() {
         _fieldErrors = {};
         if (apiErrors != null) {
@@ -3312,9 +4008,9 @@ class _AddSectionModalContentState extends State<_AddSectionModalContent> {
           }
         }
       });
-      
+
       _formKey.currentState?.validate();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3357,7 +4053,7 @@ class _AddSectionModalContentState extends State<_AddSectionModalContent> {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Course Dropdown
               DropdownButtonFormField<int>(
                 value: _selectedCourseId,
@@ -3373,7 +4069,8 @@ class _AddSectionModalContentState extends State<_AddSectionModalContent> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -3405,14 +4102,15 @@ class _AddSectionModalContentState extends State<_AddSectionModalContent> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Name Field
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: 'Section Name',
                   hintText: 'Enter section name',
-                  prefixIcon: const Icon(Icons.view_list, color: Colors.white70),
+                  prefixIcon:
+                      const Icon(Icons.view_list, color: Colors.white70),
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.2),
                   border: OutlineInputBorder(
@@ -3421,7 +4119,8 @@ class _AddSectionModalContentState extends State<_AddSectionModalContent> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -3446,7 +4145,7 @@ class _AddSectionModalContentState extends State<_AddSectionModalContent> {
                 },
               ),
               const SizedBox(height: 32),
-              
+
               // Create Button
               ElevatedButton(
                 onPressed: _isCreating ? null : _handleCreate,
@@ -3465,7 +4164,8 @@ class _AddSectionModalContentState extends State<_AddSectionModalContent> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
                         ),
                       )
                     : const Text(
@@ -3489,7 +4189,7 @@ class _EditSectionModalContent extends StatefulWidget {
   final Map<String, dynamic> section;
   final List<Map<String, dynamic>> courses;
   final VoidCallback? onSectionUpdated;
-  
+
   const _EditSectionModalContent({
     required this.section,
     required this.courses,
@@ -3497,7 +4197,8 @@ class _EditSectionModalContent extends StatefulWidget {
   });
 
   @override
-  State<_EditSectionModalContent> createState() => _EditSectionModalContentState();
+  State<_EditSectionModalContent> createState() =>
+      _EditSectionModalContentState();
 }
 
 class _EditSectionModalContentState extends State<_EditSectionModalContent> {
@@ -3511,7 +4212,8 @@ class _EditSectionModalContentState extends State<_EditSectionModalContent> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.section['name']?.toString() ?? '');
+    _nameController =
+        TextEditingController(text: widget.section['name']?.toString() ?? '');
     _selectedCourseId = widget.section['courseId'] as int?;
   }
 
@@ -3548,8 +4250,9 @@ class _EditSectionModalContentState extends State<_EditSectionModalContent> {
         Navigator.of(context).pop();
       }
     } else {
-      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
-      
+      Map<String, List<String>>? apiErrors =
+          response['errors'] as Map<String, List<String>>?;
+
       setState(() {
         _fieldErrors = {};
         if (apiErrors != null) {
@@ -3561,9 +4264,9 @@ class _EditSectionModalContentState extends State<_EditSectionModalContent> {
           }
         }
       });
-      
+
       _formKey.currentState?.validate();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3606,7 +4309,7 @@ class _EditSectionModalContentState extends State<_EditSectionModalContent> {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Course Dropdown
               DropdownButtonFormField<int>(
                 value: _selectedCourseId,
@@ -3622,7 +4325,8 @@ class _EditSectionModalContentState extends State<_EditSectionModalContent> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -3654,14 +4358,15 @@ class _EditSectionModalContentState extends State<_EditSectionModalContent> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Name Field
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: 'Section Name',
                   hintText: 'Enter section name',
-                  prefixIcon: const Icon(Icons.view_list, color: Colors.white70),
+                  prefixIcon:
+                      const Icon(Icons.view_list, color: Colors.white70),
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.2),
                   border: OutlineInputBorder(
@@ -3670,7 +4375,8 @@ class _EditSectionModalContentState extends State<_EditSectionModalContent> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -3695,7 +4401,7 @@ class _EditSectionModalContentState extends State<_EditSectionModalContent> {
                 },
               ),
               const SizedBox(height: 32),
-              
+
               // Update Button
               ElevatedButton(
                 onPressed: _isUpdating ? null : _handleUpdate,
@@ -3714,7 +4420,8 @@ class _EditSectionModalContentState extends State<_EditSectionModalContent> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
                         ),
                       )
                     : const Text(
@@ -3733,16 +4440,823 @@ class _EditSectionModalContentState extends State<_EditSectionModalContent> {
   }
 }
 
+// Add Schedule Modal
+class _AddScheduleModalContent extends StatefulWidget {
+  final List<Map<String, dynamic>> subjects;
+  final List<Map<String, dynamic>> classrooms;
+  final List<Map<String, dynamic>> sections;
+  final List<Map<String, dynamic>> instructors;
+  final VoidCallback? onScheduleCreated;
+
+  const _AddScheduleModalContent({
+    required this.subjects,
+    required this.classrooms,
+    required this.sections,
+    required this.instructors,
+    this.onScheduleCreated,
+  });
+
+  @override
+  State<_AddScheduleModalContent> createState() =>
+      _AddScheduleModalContentState();
+}
+
+class _AddScheduleModalContentState extends State<_AddScheduleModalContent> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final ApiService _apiService = ApiService();
+
+  int? _selectedSubjectId;
+  int? _selectedClassroomId;
+  int? _selectedSectionId;
+  int? _selectedInstructorId;
+  String? _selectedDayOfWeek;
+  TimeOfDay? _timeIn;
+  TimeOfDay? _timeOut;
+
+  bool _isCreating = false;
+  Map<String, String?> _fieldErrors = {};
+
+  final List<String> _daysOfWeek = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday'
+  ];
+
+  Future<void> _selectTime(bool isTimeIn) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: isTimeIn
+          ? (_timeIn ?? TimeOfDay.now())
+          : (_timeOut ?? TimeOfDay.now()),
+    );
+    if (picked != null) {
+      setState(() {
+        if (isTimeIn) {
+          _timeIn = picked;
+        } else {
+          _timeOut = picked;
+        }
+      });
+    }
+  }
+
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute:00';
+  }
+
+  Future<void> _handleCreate() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_timeIn == null || _timeOut == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select both Start and End times'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isCreating = true;
+      _fieldErrors = {};
+    });
+
+    final response = await _apiService.createSchedule(
+      timeIn: _formatTime(_timeIn!),
+      timeOut: _formatTime(_timeOut!),
+      dayOfWeek: _selectedDayOfWeek!,
+      subjectId: _selectedSubjectId!,
+      classroomId: _selectedClassroomId!,
+      sectionId: _selectedSectionId!,
+      instructorId: _selectedInstructorId!,
+    );
+
+    setState(() {
+      _isCreating = false;
+    });
+
+    if (response['success'] == true) {
+      if (mounted) {
+        widget.onScheduleCreated?.call();
+        Navigator.of(context).pop();
+      }
+    } else {
+      Map<String, List<String>>? apiErrors =
+          response['errors'] as Map<String, List<String>>?;
+
+      setState(() {
+        _fieldErrors = {};
+        if (apiErrors != null) {
+          // Map API errors to fields if possible
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to create schedule'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Add Schedule',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Subject Dropdown
+              DropdownButtonFormField<int>(
+                value: _selectedSubjectId,
+                decoration: InputDecoration(
+                  labelText: 'Subject',
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                dropdownColor: const Color(0xFF1E3A8A),
+                style: const TextStyle(color: Colors.white),
+                items: widget.subjects.map((subject) {
+                  return DropdownMenuItem<int>(
+                    value: subject['id'] as int,
+                    child: Text(subject['name']?.toString() ?? 'Unnamed'),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => _selectedSubjectId = value),
+                validator: (value) =>
+                    value == null ? 'Please select a subject' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Classroom Dropdown
+              DropdownButtonFormField<int>(
+                value: _selectedClassroomId,
+                decoration: InputDecoration(
+                  labelText: 'Classroom',
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                dropdownColor: const Color(0xFF1E3A8A),
+                style: const TextStyle(color: Colors.white),
+                items: widget.classrooms.map((classroom) {
+                  return DropdownMenuItem<int>(
+                    value: classroom['id'] as int,
+                    child: Text(classroom['name']?.toString() ?? 'Unnamed'),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => _selectedClassroomId = value),
+                validator: (value) =>
+                    value == null ? 'Please select a classroom' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Section Dropdown
+              DropdownButtonFormField<int>(
+                value: _selectedSectionId,
+                decoration: InputDecoration(
+                  labelText: 'Section',
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                dropdownColor: const Color(0xFF1E3A8A),
+                style: const TextStyle(color: Colors.white),
+                items: widget.sections.map((section) {
+                  return DropdownMenuItem<int>(
+                    value: section['id'] as int,
+                    child: Text(section['name']?.toString() ?? 'Unnamed'),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => _selectedSectionId = value),
+                validator: (value) =>
+                    value == null ? 'Please select a section' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Instructor Dropdown
+              DropdownButtonFormField<int>(
+                value: _selectedInstructorId,
+                decoration: InputDecoration(
+                  labelText: 'Instructor',
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                dropdownColor: const Color(0xFF1E3A8A),
+                style: const TextStyle(color: Colors.white),
+                items: widget.instructors.map((instructor) {
+                  final name =
+                      '${instructor['firstname']} ${instructor['lastname']}';
+                  return DropdownMenuItem<int>(
+                    value: instructor['id'] as int,
+                    child: Text(name),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => _selectedInstructorId = value),
+                validator: (value) =>
+                    value == null ? 'Please select an instructor' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Day of Week Dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedDayOfWeek,
+                decoration: InputDecoration(
+                  labelText: 'Day of Week',
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                dropdownColor: const Color(0xFF1E3A8A),
+                style: const TextStyle(color: Colors.white),
+                items: _daysOfWeek.map((day) {
+                  return DropdownMenuItem<String>(
+                    value: day,
+                    child: Text(day),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => _selectedDayOfWeek = value),
+                validator: (value) =>
+                    value == null ? 'Please select a day' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Time Pickers
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => _selectTime(true),
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'Start Time',
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.2),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        child: Text(
+                          _timeIn?.format(context) ?? 'Select Time',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => _selectTime(false),
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'End Time',
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.2),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        child: Text(
+                          _timeOut?.format(context) ?? 'Select Time',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              // Create Button
+              ElevatedButton(
+                onPressed: _isCreating ? null : _handleCreate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF3B82F6),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isCreating
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                        ),
+                      )
+                    : const Text(
+                        'Create Schedule',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Edit Schedule Modal
+class _EditScheduleModalContent extends StatefulWidget {
+  final Map<String, dynamic> schedule;
+  final List<Map<String, dynamic>> subjects;
+  final List<Map<String, dynamic>> classrooms;
+  final List<Map<String, dynamic>> sections;
+  final List<Map<String, dynamic>> instructors;
+  final VoidCallback? onScheduleUpdated;
+
+  const _EditScheduleModalContent({
+    required this.schedule,
+    required this.subjects,
+    required this.classrooms,
+    required this.sections,
+    required this.instructors,
+    this.onScheduleUpdated,
+  });
+
+  @override
+  State<_EditScheduleModalContent> createState() =>
+      _EditScheduleModalContentState();
+}
+
+class _EditScheduleModalContentState extends State<_EditScheduleModalContent> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final ApiService _apiService = ApiService();
+
+  int? _selectedSubjectId;
+  int? _selectedClassroomId;
+  int? _selectedSectionId;
+  int? _selectedInstructorId;
+  String? _selectedDayOfWeek;
+  TimeOfDay? _timeIn;
+  TimeOfDay? _timeOut;
+
+  bool _isUpdating = false;
+  Map<String, String?> _fieldErrors = {};
+
+  final List<String> _daysOfWeek = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday'
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeFields();
+  }
+
+  void _initializeFields() {
+    final schedule = widget.schedule;
+    _selectedSubjectId = schedule['subject']?['id'];
+    _selectedClassroomId = schedule['classroom']?['id'];
+    _selectedSectionId = schedule['section']?['id'];
+    _selectedInstructorId = schedule['instructor']?['id'];
+    _selectedDayOfWeek = schedule['dayOfWeek'];
+
+    if (schedule['timeIn'] != null) {
+      _timeIn = _parseTime(schedule['timeIn']);
+    }
+    if (schedule['timeOut'] != null) {
+      _timeOut = _parseTime(schedule['timeOut']);
+    }
+  }
+
+  TimeOfDay _parseTime(String timeStr) {
+    try {
+      final parts = timeStr.split(':');
+      return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    } catch (e) {
+      return TimeOfDay.now();
+    }
+  }
+
+  Future<void> _selectTime(bool isTimeIn) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: isTimeIn
+          ? (_timeIn ?? TimeOfDay.now())
+          : (_timeOut ?? TimeOfDay.now()),
+    );
+    if (picked != null) {
+      setState(() {
+        if (isTimeIn) {
+          _timeIn = picked;
+        } else {
+          _timeOut = picked;
+        }
+      });
+    }
+  }
+
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute:00';
+  }
+
+  Future<void> _handleUpdate() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_timeIn == null || _timeOut == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select both Start and End times'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isUpdating = true;
+      _fieldErrors = {};
+    });
+
+    final response = await _apiService.updateSchedule(
+      widget.schedule['id'],
+      timeIn: _formatTime(_timeIn!),
+      timeOut: _formatTime(_timeOut!),
+      dayOfWeek: _selectedDayOfWeek!,
+      subjectId: _selectedSubjectId!,
+      classroomId: _selectedClassroomId!,
+      sectionId: _selectedSectionId!,
+      instructorId: _selectedInstructorId!,
+    );
+
+    setState(() {
+      _isUpdating = false;
+    });
+
+    if (response['success'] == true) {
+      if (mounted) {
+        widget.onScheduleUpdated?.call();
+        Navigator.of(context).pop();
+      }
+    } else {
+      Map<String, List<String>>? apiErrors =
+          response['errors'] as Map<String, List<String>>?;
+
+      setState(() {
+        _fieldErrors = {};
+        if (apiErrors != null) {
+          // Map API errors to fields if possible
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Failed to update schedule'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Edit Schedule',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Subject Dropdown
+              DropdownButtonFormField<int>(
+                value: _selectedSubjectId,
+                decoration: InputDecoration(
+                  labelText: 'Subject',
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                dropdownColor: const Color(0xFF1E3A8A),
+                style: const TextStyle(color: Colors.white),
+                items: widget.subjects.map((subject) {
+                  return DropdownMenuItem<int>(
+                    value: subject['id'] as int,
+                    child: Text(subject['name']?.toString() ?? 'Unnamed'),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => _selectedSubjectId = value),
+                validator: (value) =>
+                    value == null ? 'Please select a subject' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Classroom Dropdown
+              DropdownButtonFormField<int>(
+                value: _selectedClassroomId,
+                decoration: InputDecoration(
+                  labelText: 'Classroom',
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                dropdownColor: const Color(0xFF1E3A8A),
+                style: const TextStyle(color: Colors.white),
+                items: widget.classrooms.map((classroom) {
+                  return DropdownMenuItem<int>(
+                    value: classroom['id'] as int,
+                    child: Text(classroom['name']?.toString() ?? 'Unnamed'),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => _selectedClassroomId = value),
+                validator: (value) =>
+                    value == null ? 'Please select a classroom' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Section Dropdown
+              DropdownButtonFormField<int>(
+                value: _selectedSectionId,
+                decoration: InputDecoration(
+                  labelText: 'Section',
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                dropdownColor: const Color(0xFF1E3A8A),
+                style: const TextStyle(color: Colors.white),
+                items: widget.sections.map((section) {
+                  return DropdownMenuItem<int>(
+                    value: section['id'] as int,
+                    child: Text(section['name']?.toString() ?? 'Unnamed'),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => _selectedSectionId = value),
+                validator: (value) =>
+                    value == null ? 'Please select a section' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Instructor Dropdown
+              DropdownButtonFormField<int>(
+                value: _selectedInstructorId,
+                decoration: InputDecoration(
+                  labelText: 'Instructor',
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                dropdownColor: const Color(0xFF1E3A8A),
+                style: const TextStyle(color: Colors.white),
+                items: widget.instructors.map((instructor) {
+                  final name =
+                      '${instructor['firstname']} ${instructor['lastname']}';
+                  return DropdownMenuItem<int>(
+                    value: instructor['id'] as int,
+                    child: Text(name),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => _selectedInstructorId = value),
+                validator: (value) =>
+                    value == null ? 'Please select an instructor' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Day of Week Dropdown
+              DropdownButtonFormField<String>(
+                value: _selectedDayOfWeek,
+                decoration: InputDecoration(
+                  labelText: 'Day of Week',
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                dropdownColor: const Color(0xFF1E3A8A),
+                style: const TextStyle(color: Colors.white),
+                items: _daysOfWeek.map((day) {
+                  return DropdownMenuItem<String>(
+                    value: day,
+                    child: Text(day),
+                  );
+                }).toList(),
+                onChanged: (value) =>
+                    setState(() => _selectedDayOfWeek = value),
+                validator: (value) =>
+                    value == null ? 'Please select a day' : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Time Pickers
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => _selectTime(true),
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'Start Time',
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.2),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        child: Text(
+                          _timeIn?.format(context) ?? 'Select Time',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: InkWell(
+                      onTap: () => _selectTime(false),
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'End Time',
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.2),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        child: Text(
+                          _timeOut?.format(context) ?? 'Select Time',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+
+              // Update Button
+              ElevatedButton(
+                onPressed: _isUpdating ? null : _handleUpdate,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF3B82F6),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isUpdating
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                        ),
+                      )
+                    : const Text(
+                        'Update Schedule',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // Add Subject Modal
 class _AddSubjectModalContent extends StatefulWidget {
   final VoidCallback? onSubjectCreated;
-  
+
   const _AddSubjectModalContent({
     this.onSubjectCreated,
   });
 
   @override
-  State<_AddSubjectModalContent> createState() => _AddSubjectModalContentState();
+  State<_AddSubjectModalContent> createState() =>
+      _AddSubjectModalContentState();
 }
 
 class _AddSubjectModalContentState extends State<_AddSubjectModalContent> {
@@ -3785,8 +5299,9 @@ class _AddSubjectModalContentState extends State<_AddSubjectModalContent> {
         Navigator.of(context).pop();
       }
     } else {
-      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
-      
+      Map<String, List<String>>? apiErrors =
+          response['errors'] as Map<String, List<String>>?;
+
       setState(() {
         _fieldErrors = {};
         if (apiErrors != null) {
@@ -3798,9 +5313,9 @@ class _AddSubjectModalContentState extends State<_AddSubjectModalContent> {
           }
         }
       });
-      
+
       _formKey.currentState?.validate();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3843,7 +5358,7 @@ class _AddSubjectModalContentState extends State<_AddSubjectModalContent> {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Name Field
               TextFormField(
                 controller: _nameController,
@@ -3859,7 +5374,8 @@ class _AddSubjectModalContentState extends State<_AddSubjectModalContent> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -3884,7 +5400,7 @@ class _AddSubjectModalContentState extends State<_AddSubjectModalContent> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Code Field
               TextFormField(
                 controller: _codeController,
@@ -3900,7 +5416,8 @@ class _AddSubjectModalContentState extends State<_AddSubjectModalContent> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -3925,7 +5442,7 @@ class _AddSubjectModalContentState extends State<_AddSubjectModalContent> {
                 },
               ),
               const SizedBox(height: 32),
-              
+
               // Create Button
               ElevatedButton(
                 onPressed: _isCreating ? null : _handleCreate,
@@ -3944,7 +5461,8 @@ class _AddSubjectModalContentState extends State<_AddSubjectModalContent> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
                         ),
                       )
                     : const Text(
@@ -3967,14 +5485,15 @@ class _AddSubjectModalContentState extends State<_AddSubjectModalContent> {
 class _EditSubjectModalContent extends StatefulWidget {
   final Map<String, dynamic> subject;
   final VoidCallback? onSubjectUpdated;
-  
+
   const _EditSubjectModalContent({
     required this.subject,
     this.onSubjectUpdated,
   });
 
   @override
-  State<_EditSubjectModalContent> createState() => _EditSubjectModalContentState();
+  State<_EditSubjectModalContent> createState() =>
+      _EditSubjectModalContentState();
 }
 
 class _EditSubjectModalContentState extends State<_EditSubjectModalContent> {
@@ -3988,8 +5507,10 @@ class _EditSubjectModalContentState extends State<_EditSubjectModalContent> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.subject['name']?.toString() ?? '');
-    _codeController = TextEditingController(text: widget.subject['code']?.toString() ?? '');
+    _nameController =
+        TextEditingController(text: widget.subject['name']?.toString() ?? '');
+    _codeController =
+        TextEditingController(text: widget.subject['code']?.toString() ?? '');
   }
 
   @override
@@ -4012,8 +5533,12 @@ class _EditSubjectModalContentState extends State<_EditSubjectModalContent> {
     final id = widget.subject['id'] as int;
     final response = await _apiService.updateSubject(
       id,
-      _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : null,
-      _codeController.text.trim().isNotEmpty ? _codeController.text.trim() : null,
+      _nameController.text.trim().isNotEmpty
+          ? _nameController.text.trim()
+          : null,
+      _codeController.text.trim().isNotEmpty
+          ? _codeController.text.trim()
+          : null,
     );
 
     setState(() {
@@ -4026,8 +5551,9 @@ class _EditSubjectModalContentState extends State<_EditSubjectModalContent> {
         Navigator.of(context).pop();
       }
     } else {
-      Map<String, List<String>>? apiErrors = response['errors'] as Map<String, List<String>>?;
-      
+      Map<String, List<String>>? apiErrors =
+          response['errors'] as Map<String, List<String>>?;
+
       setState(() {
         _fieldErrors = {};
         if (apiErrors != null) {
@@ -4039,9 +5565,9 @@ class _EditSubjectModalContentState extends State<_EditSubjectModalContent> {
           }
         }
       });
-      
+
       _formKey.currentState?.validate();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -4084,7 +5610,7 @@ class _EditSubjectModalContentState extends State<_EditSubjectModalContent> {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Name Field
               TextFormField(
                 controller: _nameController,
@@ -4100,7 +5626,8 @@ class _EditSubjectModalContentState extends State<_EditSubjectModalContent> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -4124,7 +5651,7 @@ class _EditSubjectModalContentState extends State<_EditSubjectModalContent> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Code Field
               TextFormField(
                 controller: _codeController,
@@ -4140,7 +5667,8 @@ class _EditSubjectModalContentState extends State<_EditSubjectModalContent> {
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.3)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -4164,7 +5692,7 @@ class _EditSubjectModalContentState extends State<_EditSubjectModalContent> {
                 },
               ),
               const SizedBox(height: 32),
-              
+
               // Update Button
               ElevatedButton(
                 onPressed: _isUpdating ? null : _handleUpdate,
@@ -4183,7 +5711,8 @@ class _EditSubjectModalContentState extends State<_EditSubjectModalContent> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
                         ),
                       )
                     : const Text(

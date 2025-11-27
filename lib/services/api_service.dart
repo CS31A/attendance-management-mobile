@@ -5,10 +5,10 @@ import 'storage_service.dart';
 class ApiService {
   // Update this to your actual backend URL
   static const String baseUrl = 'https://localhost:8081';
-  
+
   // Flag to prevent multiple simultaneous refresh attempts
   bool _isRefreshing = false;
-  
+
   // Get headers with authentication token
   Future<Map<String, String>> _getHeaders({bool skipAuth = false}) async {
     if (skipAuth) {
@@ -36,15 +36,16 @@ class ApiService {
     // If we get a 401 and this is not a refresh request, try to refresh the token
     if (response.statusCode == 401 && !isRefreshRequest) {
       print('🔑 Received 401, attempting to refresh token...');
-      
+
       // Prevent multiple simultaneous refresh attempts
       if (!_isRefreshing) {
         _isRefreshing = true;
         try {
           final refreshResult = await refreshToken();
-          
+
           if (refreshResult['success'] == true) {
-            print('✅ Token refreshed successfully, retrying original request...');
+            print(
+                '✅ Token refreshed successfully, retrying original request...');
             // Retry the original request with the new token
             response = await requestFn();
           } else {
@@ -76,7 +77,7 @@ class ApiService {
         'Content-Type': 'application/json',
         'Accept': '*/*',
       };
-      
+
       final body = {
         'username': username,
         'password': password,
@@ -124,7 +125,8 @@ class ApiService {
       print('❌ Login error: $e');
       return {
         'success': false,
-        'message': 'Failed to connect to server. Please check your internet connection.',
+        'message':
+            'Failed to connect to server. Please check your internet connection.',
         'accessToken': null,
         'refreshToken': null,
         'user': null,
@@ -137,7 +139,7 @@ class ApiService {
     try {
       final refreshTokenValue = await StorageService.getRefreshToken();
       final oldAccessToken = await StorageService.getAccessToken();
-      
+
       if (refreshTokenValue == null || refreshTokenValue.isEmpty) {
         return {
           'success': false,
@@ -151,14 +153,15 @@ class ApiService {
         'Accept': '*/*',
         if (oldAccessToken != null) 'Authorization': 'Bearer $oldAccessToken',
       };
-      
+
       final body = {
         'refreshToken': refreshTokenValue,
         'oldAccessToken': oldAccessToken,
       };
 
       print('📤 Refreshing token: $url');
-      print('📦 Request body: ${body.map((k, v) => MapEntry(k, k == 'refreshToken' || k == 'oldAccessToken' ? (v != null ? '${v.toString().substring(0, v.toString().length > 20 ? 20 : v.toString().length)}...' : null) : v))}');
+      print(
+          '📦 Request body: ${body.map((k, v) => MapEntry(k, k == 'refreshToken' || k == 'oldAccessToken' ? (v != null ? '${v.toString().substring(0, v.toString().length > 20 ? 20 : v.toString().length)}...' : null) : v))}');
 
       final response = await http.post(
         url,
@@ -180,14 +183,15 @@ class ApiService {
 
       if (response.statusCode == 200) {
         // Save new tokens if refresh was successful
-        if (responseData['success'] == true && responseData['accessToken'] != null) {
+        if (responseData['success'] == true &&
+            responseData['accessToken'] != null) {
           await StorageService.saveTokens(
             responseData['accessToken'] as String,
             responseData['refreshToken'] as String? ?? refreshTokenValue,
           );
           print('✅ New tokens saved successfully');
         }
-        
+
         return {
           'success': responseData['success'] ?? true,
           'message': responseData['message'] ?? 'Token refreshed successfully',
@@ -206,7 +210,8 @@ class ApiService {
       print('❌ Refresh token error: $e');
       return {
         'success': false,
-        'message': 'Failed to connect to server. Please check your internet connection.',
+        'message':
+            'Failed to connect to server. Please check your internet connection.',
         'accessToken': null,
         'refreshToken': null,
       };
@@ -227,7 +232,7 @@ class ApiService {
     try {
       final url = Uri.parse('$baseUrl/api/account/register');
       final headers = await _getHeaders();
-      
+
       final body = {
         'username': username,
         'firstname': firstname,
@@ -262,12 +267,12 @@ class ApiService {
         // Handle error response
         String errorMessage = 'Registration failed';
         Map<String, List<String>>? fieldErrors;
-        
+
         if (responseData.containsKey('errors')) {
           final errors = responseData['errors'] as Map<String, dynamic>;
           fieldErrors = {};
           final errorList = <String>[];
-          
+
           errors.forEach((key, value) {
             if (value is List) {
               final errorMessages = value.map((e) => e.toString()).toList();
@@ -275,14 +280,14 @@ class ApiService {
               errorList.addAll(errorMessages);
             }
           });
-          
+
           errorMessage = errorList.join(', ');
         } else if (responseData.containsKey('message')) {
           errorMessage = responseData['message'] as String;
         } else if (responseData.containsKey('title')) {
           errorMessage = responseData['title'] as String;
         }
-        
+
         return {
           'success': false,
           'message': errorMessage,
@@ -293,7 +298,8 @@ class ApiService {
       print('❌ Register user error: $e');
       return {
         'success': false,
-        'message': 'Failed to connect to server. Please check your internet connection.',
+        'message':
+            'Failed to connect to server. Please check your internet connection.',
       };
     }
   }
@@ -302,80 +308,85 @@ class ApiService {
   Future<Map<String, dynamic>> getUsers() async {
     try {
       final url = Uri.parse('$baseUrl/api/users');
-      
+
       print('📤 Fetching users from /api/users: $url');
-      
+
       final response = await _makeAuthenticatedRequest(() async {
         final headers = await _getHeaders();
         return await http.get(url, headers: headers);
       });
-      
+
       print('📥 Users response status: ${response.statusCode}');
       print('📥 Users response body: ${response.body}');
-      
+
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         final responseData = jsonDecode(response.body);
         List<Map<String, dynamic>> users = [];
-        
+
         // Handle different response formats
         if (responseData is List) {
           users = List<Map<String, dynamic>>.from(responseData);
-        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           users = List<Map<String, dynamic>>.from(responseData['data']);
         } else if (responseData is Map<String, dynamic>) {
           print('⚠️ Unexpected users response format: $responseData');
         }
-        
+
         // Normalize user data format
         final normalizedUsers = users.map((user) {
           final normalized = Map<String, dynamic>.from(user);
-          
+
           // Map userId to id if needed
-          if (normalized.containsKey('userId') && !normalized.containsKey('id')) {
+          if (normalized.containsKey('userId') &&
+              !normalized.containsKey('id')) {
             normalized['id'] = normalized['userId'];
           }
-          
+
           // Ensure role is properly formatted
           if (normalized.containsKey('role')) {
             final role = normalized['role']?.toString() ?? '';
             // Capitalize first letter
             if (role.isNotEmpty) {
-              normalized['role'] = role[0].toUpperCase() + role.substring(1).toLowerCase();
+              normalized['role'] =
+                  role[0].toUpperCase() + role.substring(1).toLowerCase();
             }
           }
-          
+
           // Combine firstname and lastname into name field if needed
-          if (normalized.containsKey('firstname') || normalized.containsKey('lastname')) {
+          if (normalized.containsKey('firstname') ||
+              normalized.containsKey('lastname')) {
             final firstname = normalized['firstname']?.toString() ?? '';
             final lastname = normalized['lastname']?.toString() ?? '';
             normalized['firstname'] = firstname;
             normalized['lastname'] = lastname;
             normalized['name'] = '$firstname $lastname'.trim();
           }
-          
+
           return normalized;
         }).toList();
-        
+
         print('✅ Fetched ${normalizedUsers.length} users from /api/users');
-        
+
         return {
           'success': true,
           'data': normalizedUsers,
         };
       } else {
-        final responseData = response.body.isNotEmpty 
-            ? jsonDecode(response.body) 
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body)
             : <String, dynamic>{};
-        
+
         return {
           'success': false,
-          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch users',
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch users',
           'data': [],
         };
       }
     } catch (e) {
       print('❌ Get users error: $e');
-      
+
       return {
         'success': false,
         'message': 'Failed to connect to server.',
@@ -439,7 +450,7 @@ class ApiService {
   }) async {
     try {
       final url = Uri.parse('$baseUrl/api/account/admin/users/$userId');
-      
+
       final body = <String, dynamic>{};
       if (username != null) body['username'] = username;
       if (firstname != null) body['firstname'] = firstname;
@@ -504,13 +515,15 @@ class ApiService {
         if (email != null) 'email': email,
         if (currentPassword != null) 'currentPassword': currentPassword,
         if (newPassword != null) 'newPassword': newPassword,
-        if (confirmNewPassword != null) 'confirmNewPassword': confirmNewPassword,
+        if (confirmNewPassword != null)
+          'confirmNewPassword': confirmNewPassword,
         if (sectionId != null) 'sectionId': sectionId,
         if (isRegular != null) 'isRegular': isRegular,
       };
 
       print('📤 Updating profile: $url');
-      print('📦 Request body: ${Map<String, dynamic>.from(body)..updateAll((k, v) => k.toLowerCase().contains('password') ? '***' : v)}');
+      print(
+          '📦 Request body: ${Map<String, dynamic>.from(body)..updateAll((k, v) => k.toLowerCase().contains('password') ? '***' : v)}');
 
       final response = await _makeAuthenticatedRequest(() async {
         final headers = await _getHeaders();
@@ -540,7 +553,8 @@ class ApiService {
           'updatedProfile': responseData['updatedProfile'],
         };
       } else {
-        String errorMessage = responseData['message']?.toString() ?? 'Failed to update profile';
+        String errorMessage =
+            responseData['message']?.toString() ?? 'Failed to update profile';
         Map<String, List<String>>? fieldErrors;
 
         if (responseData.containsKey('errors')) {
@@ -685,7 +699,8 @@ class ApiService {
         List<Map<String, dynamic>> classrooms = [];
         if (responseData is List) {
           classrooms = List<Map<String, dynamic>>.from(responseData);
-        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           classrooms = List<Map<String, dynamic>>.from(responseData['data']);
         }
 
@@ -696,7 +711,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch classrooms',
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch classrooms',
           'data': [],
         };
       }
@@ -784,11 +800,13 @@ class ApiService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return {
           'success': true,
-          'message': responseData['message'] ?? 'Classroom created successfully',
+          'message':
+              responseData['message'] ?? 'Classroom created successfully',
           'data': responseData,
         };
       } else {
-        String errorMessage = responseData['message']?.toString() ?? 'Failed to create classroom';
+        String errorMessage =
+            responseData['message']?.toString() ?? 'Failed to create classroom';
         Map<String, List<String>>? fieldErrors;
 
         if (responseData.containsKey('errors')) {
@@ -857,11 +875,13 @@ class ApiService {
       if (response.statusCode == 200) {
         return {
           'success': true,
-          'message': responseData['message'] ?? 'Classroom updated successfully',
+          'message':
+              responseData['message'] ?? 'Classroom updated successfully',
           'data': responseData,
         };
       } else {
-        String errorMessage = responseData['message']?.toString() ?? 'Failed to update classroom';
+        String errorMessage =
+            responseData['message']?.toString() ?? 'Failed to update classroom';
         Map<String, List<String>>? fieldErrors;
 
         if (responseData.containsKey('errors')) {
@@ -916,12 +936,19 @@ class ApiService {
           'message': 'Classroom deleted successfully',
         };
       } else {
-        final responseData = response.body.isNotEmpty
-            ? jsonDecode(response.body) as Map<String, dynamic>
-            : <String, dynamic>{};
+        String message;
+        try {
+          final responseData = jsonDecode(response.body);
+          message = (responseData is Map ? responseData['message'] : null) ??
+              'Failed to delete classroom';
+        } catch (e) {
+          message = response.body.isNotEmpty
+              ? response.body
+              : 'Failed to delete classroom';
+        }
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Failed to delete classroom',
+          'message': message,
         };
       }
     } catch (e) {
@@ -958,7 +985,8 @@ class ApiService {
         List<Map<String, dynamic>> courses = [];
         if (responseData is List) {
           courses = List<Map<String, dynamic>>.from(responseData);
-        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           courses = List<Map<String, dynamic>>.from(responseData['data']);
         }
 
@@ -969,7 +997,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch courses',
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch courses',
           'data': [],
         };
       }
@@ -1061,7 +1090,8 @@ class ApiService {
           'data': responseData,
         };
       } else {
-        String errorMessage = responseData['message']?.toString() ?? 'Failed to create course';
+        String errorMessage =
+            responseData['message']?.toString() ?? 'Failed to create course';
         Map<String, List<String>>? fieldErrors;
 
         if (responseData.containsKey('errors')) {
@@ -1134,7 +1164,8 @@ class ApiService {
           'data': responseData,
         };
       } else {
-        String errorMessage = responseData['message']?.toString() ?? 'Failed to update course';
+        String errorMessage =
+            responseData['message']?.toString() ?? 'Failed to update course';
         Map<String, List<String>>? fieldErrors;
 
         if (responseData.containsKey('errors')) {
@@ -1189,12 +1220,19 @@ class ApiService {
           'message': 'Course deleted successfully',
         };
       } else {
-        final responseData = response.body.isNotEmpty
-            ? jsonDecode(response.body) as Map<String, dynamic>
-            : <String, dynamic>{};
+        String message;
+        try {
+          final responseData = jsonDecode(response.body);
+          message = (responseData is Map ? responseData['message'] : null) ??
+              'Failed to delete course';
+        } catch (e) {
+          message = response.body.isNotEmpty
+              ? response.body
+              : 'Failed to delete course';
+        }
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Failed to delete course',
+          'message': message,
         };
       }
     } catch (e) {
@@ -1231,7 +1269,8 @@ class ApiService {
         List<Map<String, dynamic>> sections = [];
         if (responseData is List) {
           sections = List<Map<String, dynamic>>.from(responseData);
-        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           sections = List<Map<String, dynamic>>.from(responseData['data']);
         }
 
@@ -1242,7 +1281,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch sections',
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch sections',
           'data': [],
         };
       }
@@ -1335,7 +1375,8 @@ class ApiService {
           'data': responseData,
         };
       } else {
-        String errorMessage = responseData['message']?.toString() ?? 'Failed to create section';
+        String errorMessage =
+            responseData['message']?.toString() ?? 'Failed to create section';
         Map<String, List<String>>? fieldErrors;
 
         if (responseData.containsKey('errors')) {
@@ -1372,7 +1413,8 @@ class ApiService {
   }
 
   // Update section
-  Future<Map<String, dynamic>> updateSection(int id, String? name, int? courseId) async {
+  Future<Map<String, dynamic>> updateSection(
+      int id, String? name, int? courseId) async {
     try {
       final url = Uri.parse('$baseUrl/api/sections/$id');
       final headers = await _getHeaders();
@@ -1409,7 +1451,8 @@ class ApiService {
           'data': responseData,
         };
       } else {
-        String errorMessage = responseData['message']?.toString() ?? 'Failed to update section';
+        String errorMessage =
+            responseData['message']?.toString() ?? 'Failed to update section';
         Map<String, List<String>>? fieldErrors;
 
         if (responseData.containsKey('errors')) {
@@ -1464,19 +1507,26 @@ class ApiService {
           'message': 'Section deleted successfully',
         };
       } else {
-        final responseData = response.body.isNotEmpty
-            ? jsonDecode(response.body) as Map<String, dynamic>
-            : <String, dynamic>{};
+        String message;
+        try {
+          final responseData = jsonDecode(response.body);
+          message = (responseData is Map ? responseData['message'] : null) ??
+              'Failed to delete section';
+        } catch (e) {
+          message = response.body.isNotEmpty
+              ? response.body
+              : 'Failed to delete section';
+        }
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Failed to delete section',
+          'message': message,
         };
       }
     } catch (e) {
       print('❌ Delete section error: $e');
       return {
         'success': false,
-        'message': 'Failed to connect to server.',
+        'message': 'Failed to connect to server: $e',
       };
     }
   }
@@ -1506,7 +1556,8 @@ class ApiService {
         List<Map<String, dynamic>> students = [];
         if (responseData is List) {
           students = List<Map<String, dynamic>>.from(responseData);
-        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           students = List<Map<String, dynamic>>.from(responseData['data']);
         }
 
@@ -1517,7 +1568,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch active students',
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch active students',
           'data': [],
         };
       }
@@ -1556,7 +1608,8 @@ class ApiService {
         List<Map<String, dynamic>> students = [];
         if (responseData is List) {
           students = List<Map<String, dynamic>>.from(responseData);
-        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           students = List<Map<String, dynamic>>.from(responseData['data']);
         }
 
@@ -1567,7 +1620,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch all students',
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch all students',
           'data': [],
         };
       }
@@ -1606,7 +1660,8 @@ class ApiService {
         List<Map<String, dynamic>> subjects = [];
         if (responseData is List) {
           subjects = List<Map<String, dynamic>>.from(responseData);
-        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           subjects = List<Map<String, dynamic>>.from(responseData['data']);
         }
 
@@ -1617,7 +1672,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch subjects',
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch subjects',
           'data': [],
         };
       }
@@ -1710,7 +1766,8 @@ class ApiService {
           'data': responseData,
         };
       } else {
-        String errorMessage = responseData['message']?.toString() ?? 'Failed to create subject';
+        String errorMessage =
+            responseData['message']?.toString() ?? 'Failed to create subject';
         Map<String, List<String>>? fieldErrors;
 
         if (responseData.containsKey('errors')) {
@@ -1747,7 +1804,8 @@ class ApiService {
   }
 
   // Update subject
-  Future<Map<String, dynamic>> updateSubject(int id, String? name, String? code) async {
+  Future<Map<String, dynamic>> updateSubject(
+      int id, String? name, String? code) async {
     try {
       final url = Uri.parse('$baseUrl/api/subjects/$id');
       final headers = await _getHeaders();
@@ -1784,7 +1842,8 @@ class ApiService {
           'data': responseData,
         };
       } else {
-        String errorMessage = responseData['message']?.toString() ?? 'Failed to update subject';
+        String errorMessage =
+            responseData['message']?.toString() ?? 'Failed to update subject';
         Map<String, List<String>>? fieldErrors;
 
         if (responseData.containsKey('errors')) {
@@ -1839,12 +1898,19 @@ class ApiService {
           'message': 'Subject deleted successfully',
         };
       } else {
-        final responseData = response.body.isNotEmpty
-            ? jsonDecode(response.body) as Map<String, dynamic>
-            : <String, dynamic>{};
+        String message;
+        try {
+          final responseData = jsonDecode(response.body);
+          message = (responseData is Map ? responseData['message'] : null) ??
+              'Failed to delete subject';
+        } catch (e) {
+          message = response.body.isNotEmpty
+              ? response.body
+              : 'Failed to delete subject';
+        }
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Failed to delete subject',
+          'message': message,
         };
       }
     } catch (e) {
@@ -1906,7 +1972,8 @@ class ApiService {
           'data': responseData,
         };
       } else {
-        String errorMessage = responseData['message']?.toString() ?? 'Failed to enroll student';
+        String errorMessage =
+            responseData['message']?.toString() ?? 'Failed to enroll student';
         Map<String, List<String>>? fieldErrors;
 
         if (responseData.containsKey('errors')) {
@@ -1945,7 +2012,8 @@ class ApiService {
   // Get enrollments for a specific student
   Future<Map<String, dynamic>> getStudentEnrollments(int studentId) async {
     try {
-      final url = Uri.parse('$baseUrl/api/StudentEnrollment/student/$studentId');
+      final url =
+          Uri.parse('$baseUrl/api/StudentEnrollment/student/$studentId');
       final headers = await _getHeaders();
 
       print('📤 Fetching enrollments for student: $url');
@@ -1966,12 +2034,15 @@ class ApiService {
       if (response.statusCode == 200) {
         return {
           'success': true,
-          'data': responseData is Map ? responseData : {'enrollments': responseData},
+          'data': responseData is Map
+              ? responseData
+              : {'enrollments': responseData},
         };
       } else {
         return {
           'success': false,
-          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch student enrollments',
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch student enrollments',
           'data': null,
         };
       }
@@ -1988,7 +2059,8 @@ class ApiService {
   // Get students enrolled in a section
   Future<Map<String, dynamic>> getSectionStudents(int sectionId) async {
     try {
-      final url = Uri.parse('$baseUrl/api/StudentEnrollment/section/$sectionId/students');
+      final url = Uri.parse(
+          '$baseUrl/api/StudentEnrollment/section/$sectionId/students');
       final headers = await _getHeaders();
 
       print('📤 Fetching students for section: $url');
@@ -2010,7 +2082,8 @@ class ApiService {
         List<Map<String, dynamic>> enrollments = [];
         if (responseData is List) {
           enrollments = List<Map<String, dynamic>>.from(responseData);
-        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           enrollments = List<Map<String, dynamic>>.from(responseData['data']);
         }
 
@@ -2021,7 +2094,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch section students',
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch section students',
           'data': [],
         };
       }
@@ -2038,7 +2112,8 @@ class ApiService {
   // Drop an enrollment
   Future<Map<String, dynamic>> dropEnrollment(int enrollmentId) async {
     try {
-      final url = Uri.parse('$baseUrl/api/StudentEnrollment/$enrollmentId/drop');
+      final url =
+          Uri.parse('$baseUrl/api/StudentEnrollment/$enrollmentId/drop');
       final headers = await _getHeaders();
 
       print('📤 Dropping enrollment: $url');
@@ -2074,7 +2149,8 @@ class ApiService {
   // Re-enroll a student
   Future<Map<String, dynamic>> reenrollStudent(int enrollmentId) async {
     try {
-      final url = Uri.parse('$baseUrl/api/StudentEnrollment/$enrollmentId/reenroll');
+      final url =
+          Uri.parse('$baseUrl/api/StudentEnrollment/$enrollmentId/reenroll');
       final headers = await _getHeaders();
 
       print('📤 Re-enrolling student: $url');
@@ -2131,7 +2207,9 @@ class ApiService {
         final responseData = jsonDecode(response.body);
         return {
           'success': true,
-          'exists': responseData is bool ? responseData : (responseData == true || responseData == 'true'),
+          'exists': responseData is bool
+              ? responseData
+              : (responseData == true || responseData == 'true'),
           'data': responseData,
         };
       } else {
@@ -2176,7 +2254,8 @@ class ApiService {
         List<Map<String, dynamic>> students = [];
         if (responseData is List) {
           students = List<Map<String, dynamic>>.from(responseData);
-        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           students = List<Map<String, dynamic>>.from(responseData['data']);
         }
 
@@ -2187,7 +2266,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch students',
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch students',
           'data': [],
         };
       }
@@ -2285,7 +2365,8 @@ class ApiService {
           'data': responseData,
         };
       } else {
-        String errorMessage = responseData['message']?.toString() ?? 'Failed to update student';
+        String errorMessage =
+            responseData['message']?.toString() ?? 'Failed to update student';
         Map<String, List<String>>? fieldErrors;
 
         if (responseData.containsKey('errors')) {
@@ -2379,7 +2460,8 @@ class ApiService {
             : <String, dynamic>{};
         return {
           'success': true,
-          'message': responseData['message'] ?? 'Student soft deleted successfully',
+          'message':
+              responseData['message'] ?? 'Student soft deleted successfully',
         };
       } else {
         final responseData = response.body.isNotEmpty
@@ -2463,7 +2545,8 @@ class ApiService {
         List<Map<String, dynamic>> subjects = [];
         if (responseData is List) {
           subjects = List<Map<String, dynamic>>.from(responseData);
-        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           subjects = List<Map<String, dynamic>>.from(responseData['data']);
         }
 
@@ -2474,7 +2557,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch student subjects',
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch student subjects',
           'data': [],
         };
       }
@@ -2513,7 +2597,8 @@ class ApiService {
         List<Map<String, dynamic>> instructors = [];
         if (responseData is List) {
           instructors = List<Map<String, dynamic>>.from(responseData);
-        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           instructors = List<Map<String, dynamic>>.from(responseData['data']);
         }
 
@@ -2524,7 +2609,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch instructors',
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch instructors',
           'data': [],
         };
       }
@@ -2616,11 +2702,13 @@ class ApiService {
       if (response.statusCode == 200) {
         return {
           'success': true,
-          'message': responseData['message'] ?? 'Instructor updated successfully',
+          'message':
+              responseData['message'] ?? 'Instructor updated successfully',
           'data': responseData,
         };
       } else {
-        String errorMessage = responseData['message']?.toString() ?? 'Failed to update instructor';
+        String errorMessage = responseData['message']?.toString() ??
+            'Failed to update instructor';
         Map<String, List<String>>? fieldErrors;
 
         if (responseData.containsKey('errors')) {
@@ -2675,7 +2763,8 @@ class ApiService {
             : <String, dynamic>{};
         return {
           'success': true,
-          'message': responseData['message'] ?? 'Instructor deleted successfully',
+          'message':
+              responseData['message'] ?? 'Instructor deleted successfully',
         };
       } else {
         final responseData = response.body.isNotEmpty
@@ -2714,7 +2803,8 @@ class ApiService {
             : <String, dynamic>{};
         return {
           'success': true,
-          'message': responseData['message'] ?? 'Instructor soft deleted successfully',
+          'message':
+              responseData['message'] ?? 'Instructor soft deleted successfully',
         };
       } else {
         final responseData = response.body.isNotEmpty
@@ -2722,7 +2812,8 @@ class ApiService {
             : <String, dynamic>{};
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Failed to soft delete instructor',
+          'message':
+              responseData['message'] ?? 'Failed to soft delete instructor',
         };
       }
     } catch (e) {
@@ -2753,7 +2844,8 @@ class ApiService {
             : <String, dynamic>{};
         return {
           'success': true,
-          'message': responseData['message'] ?? 'Instructor restored successfully',
+          'message':
+              responseData['message'] ?? 'Instructor restored successfully',
         };
       } else {
         final responseData = response.body.isNotEmpty
@@ -2798,7 +2890,8 @@ class ApiService {
         List<Map<String, dynamic>> subjects = [];
         if (responseData is List) {
           subjects = List<Map<String, dynamic>>.from(responseData);
-        } else if (responseData is Map<String, dynamic> && responseData.containsKey('data')) {
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
           subjects = List<Map<String, dynamic>>.from(responseData['data']);
         }
 
@@ -2809,7 +2902,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': (responseData is Map ? responseData['message'] : null) ?? 'Failed to fetch instructor subjects',
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch instructor subjects',
           'data': [],
         };
       }
@@ -2851,7 +2945,8 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Failed to fetch instructor profile',
+          'message':
+              responseData['message'] ?? 'Failed to fetch instructor profile',
         };
       }
     } catch (e) {
@@ -2862,5 +2957,376 @@ class ApiService {
       };
     }
   }
-}
 
+  // Get all schedules
+  Future<Map<String, dynamic>> getSchedules() async {
+    try {
+      final url = Uri.parse('$baseUrl/api/schedules');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching schedules: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+          'data': [],
+        };
+      }
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        List<Map<String, dynamic>> schedules = [];
+        if (responseData is List) {
+          schedules = List<Map<String, dynamic>>.from(responseData);
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
+          schedules = List<Map<String, dynamic>>.from(responseData['data']);
+        }
+
+        return {
+          'success': true,
+          'data': schedules,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch schedules',
+          'data': [],
+        };
+      }
+    } catch (e) {
+      print('❌ Get schedules error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+        'data': [],
+      };
+    }
+  }
+
+  // Create schedule
+  Future<Map<String, dynamic>> createSchedule({
+    required String timeIn,
+    required String timeOut,
+    required String dayOfWeek,
+    required int subjectId,
+    required int classroomId,
+    required int sectionId,
+    required int instructorId,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/schedules');
+      final headers = await _getHeaders();
+
+      final body = {
+        'timeIn': timeIn,
+        'timeOut': timeOut,
+        'dayOfWeek': dayOfWeek,
+        'subjectId': subjectId,
+        'classroomId': classroomId,
+        'sectionId': sectionId,
+        'instructorId': instructorId,
+      };
+
+      print('📤 Creating schedule: $url');
+      print('📦 Request body: $body');
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Schedule created successfully',
+          'data': responseData,
+        };
+      } else {
+        String errorMessage =
+            responseData['message']?.toString() ?? 'Failed to create schedule';
+        Map<String, List<String>>? fieldErrors;
+
+        if (responseData.containsKey('errors')) {
+          final errors = responseData['errors'] as Map<String, dynamic>;
+          fieldErrors = {};
+          final errorList = <String>[];
+
+          errors.forEach((key, value) {
+            if (value is List) {
+              final msgs = value.map((e) => e.toString()).toList();
+              fieldErrors![key] = msgs;
+              errorList.addAll(msgs);
+            }
+          });
+
+          if (errorList.isNotEmpty) {
+            errorMessage = errorList.join(', ');
+          }
+        }
+
+        return {
+          'success': false,
+          'message': errorMessage,
+          'errors': fieldErrors,
+        };
+      }
+    } catch (e) {
+      print('❌ Create schedule error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> updateSchedule(
+    int id, {
+    required String timeIn,
+    required String timeOut,
+    required String dayOfWeek,
+    required int subjectId,
+    required int classroomId,
+    required int sectionId,
+    required int instructorId,
+  }) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/schedules/$id');
+      final headers = await _getHeaders();
+
+      final body = {
+        'timeIn': timeIn,
+        'timeOut': timeOut,
+        'dayOfWeek': dayOfWeek,
+        'subjectId': subjectId,
+        'classroomId': classroomId,
+        'sectionId': sectionId,
+        'instructorId': instructorId,
+      };
+
+      print('📤 Updating schedule: $url');
+      print('📦 Request body: $body');
+
+      final response = await http.put(
+        url,
+        headers: headers,
+        body: jsonEncode(body),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Schedule updated successfully',
+          'data': responseData,
+        };
+      } else {
+        String errorMessage =
+            responseData['message']?.toString() ?? 'Failed to update schedule';
+        Map<String, List<String>>? fieldErrors;
+
+        if (responseData.containsKey('errors')) {
+          final errors = responseData['errors'] as Map<String, dynamic>;
+          fieldErrors = {};
+          final errorList = <String>[];
+
+          errors.forEach((key, value) {
+            if (value is List) {
+              final msgs = value.map((e) => e.toString()).toList();
+              fieldErrors![key] = msgs;
+              errorList.addAll(msgs);
+            }
+          });
+
+          if (errorList.isNotEmpty) {
+            errorMessage = errorList.join(', ');
+          }
+        }
+
+        return {
+          'success': false,
+          'message': errorMessage,
+          'errors': fieldErrors,
+        };
+      }
+    } catch (e) {
+      print('❌ Update schedule error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteSchedule(int id) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/schedules/$id');
+      final headers = await _getHeaders();
+
+      print('📤 Deleting schedule: $url');
+
+      final response = await http.delete(
+        url,
+        headers: headers,
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return {
+          'success': true,
+          'message': 'Schedule deleted successfully',
+        };
+      } else {
+        if (response.body.isEmpty) {
+          return {
+            'success': false,
+            'message':
+                'Failed to delete schedule. Status: ${response.statusCode}',
+          };
+        }
+        try {
+          final responseData = jsonDecode(response.body);
+          return {
+            'success': false,
+            'message': responseData['message'] ?? 'Failed to delete schedule',
+          };
+        } catch (e) {
+          return {
+            'success': false,
+            'message': response.body, // Return raw body if not JSON
+          };
+        }
+      }
+    } catch (e) {
+      print('❌ Delete schedule error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Get schedule by ID
+  Future<Map<String, dynamic>> getScheduleById(int id) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/schedules/$id');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching schedule: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+        };
+      }
+
+      final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': responseData,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': responseData['message'] ?? 'Failed to fetch schedule',
+        };
+      }
+    } catch (e) {
+      print('❌ Get schedule error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+      };
+    }
+  }
+
+  // Get instructor schedules
+  Future<Map<String, dynamic>> getInstructorSchedules(int instructorId) async {
+    try {
+      final url = Uri.parse('$baseUrl/api/schedules/$instructorId/all');
+      final headers = await _getHeaders();
+
+      print('📤 Fetching instructor schedules: $url');
+      final response = await http.get(url, headers: headers);
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body: ${response.body}');
+
+      if (response.body.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Empty response from server',
+          'data': [],
+        };
+      }
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        List<Map<String, dynamic>> schedules = [];
+        if (responseData is List) {
+          schedules = List<Map<String, dynamic>>.from(responseData);
+        } else if (responseData is Map<String, dynamic> &&
+            responseData.containsKey('data')) {
+          schedules = List<Map<String, dynamic>>.from(responseData['data']);
+        }
+
+        return {
+          'success': true,
+          'data': schedules,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': (responseData is Map ? responseData['message'] : null) ??
+              'Failed to fetch instructor schedules',
+          'data': [],
+        };
+      }
+    } catch (e) {
+      print('❌ Get instructor schedules error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to connect to server.',
+        'data': [],
+      };
+    }
+  }
+}
