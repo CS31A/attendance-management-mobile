@@ -1,6 +1,9 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AppConfig {
   // API Configuration
-  static const String baseUrl =
+  static String get baseUrl =>
+      dotenv.env['API_URL'] ??
       'http://attendance.eba-8g72z7wh.ap-southeast-1.elasticbeanstalk.com';
 
   // App Information

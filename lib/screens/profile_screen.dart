@@ -339,7 +339,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Header with cover and centered profile
         _buildProfileHeader(username: username, role: role),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 80),
 
         // Username
         Padding(
@@ -347,7 +347,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Text(
             username,
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.w700,
               color: Colors.white,
               letterSpacing: -0.5,
@@ -537,7 +537,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Text(
                         username.isNotEmpty ? username[0].toUpperCase() : 'A',
                         style: const TextStyle(
-                          fontSize: 48,
+                          fontSize: 40,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),

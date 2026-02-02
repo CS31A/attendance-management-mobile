@@ -6,6 +6,7 @@ import 'screens/admin_dashboard.dart';
 import 'providers/app_data.dart';
 import 'services/api_service.dart';
 import 'services/storage_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -19,6 +20,7 @@ class MyHttpOverrides extends HttpOverrides {
 void main() async {
   HttpOverrides.global = MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await AppStorage.init();
   final loggedIn = await AppStorage.isLoggedIn();
   runApp(MyApp(startLoggedIn: loggedIn));

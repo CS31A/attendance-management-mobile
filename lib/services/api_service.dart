@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'storage_service.dart';
 
 class ApiService {
   // Update this to your actual backend URL
   // For Android Emulator, use 'https://10.0.2.2:8081'
   // For Physical Device, use your machine's LAN IP (e.g., 'https://192.168.1.x:8081')
-  static const String baseUrl =
+  static String get baseUrl =>
+      dotenv.env['API_URL'] ??
       'http://attendance.eba-8g72z7wh.ap-southeast-1.elasticbeanstalk.com';
 
   // Flag to prevent multiple simultaneous refresh attempts

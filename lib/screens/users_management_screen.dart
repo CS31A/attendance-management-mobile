@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/api_service.dart';
 import 'filtered_users_screen.dart';
-import 'add_user_screen.dart' show showAddUserModal;
+import 'add_user_screen.dart';
 import 'students_management_screen.dart';
 import 'teachers_management_screen.dart';
 
@@ -108,7 +108,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                         'User Overview',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 32,
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -219,7 +219,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                                               const SizedBox(height: 24),
                                               // Chart
                                               SizedBox(
-                                                height: 220,
+                                                height: 150,
                                                 child: _buildAreaChart(),
                                               ),
                                             ],
@@ -730,9 +730,12 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   }
 
   void _openCreateUser() async {
-    await showAddUserModal(
-      context,
-      onUserCreated: () => _loadUsers(),
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AddUserScreen(
+          onUserCreated: () => _loadUsers(),
+        ),
+      ),
     );
     await _loadUsers();
   }
