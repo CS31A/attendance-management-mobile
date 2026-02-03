@@ -35,6 +35,9 @@ class _AdminDashboardState extends State<AdminDashboard>
   int _totalTeachers = 0;
   int _totalAdmins = 0;
 
+  // Attendance Stats (Mon-Fri)
+  List<double> _attendanceStats = [0, 0, 0, 0, 0];
+
   late AnimationController _entranceController;
   late AnimationController _navigationController;
   late Animation<double> _fadeAnimation;
@@ -111,6 +114,10 @@ class _AdminDashboardState extends State<AdminDashboard>
                   .where((u) =>
                       (u['role']?.toString() ?? '').toLowerCase() == 'admin')
                   .length;
+
+              // Initialize attendance stats to zero (as no classes started yet)
+              _attendanceStats = [0, 0, 0, 0, 0];
+
               _isLoading = false;
             });
           }
@@ -674,13 +681,12 @@ class _AdminDashboardState extends State<AdminDashboard>
                     borderData: FlBorderData(
                       show: false,
                     ),
-                    barGroups: [
-                      // Monday - Navy blue gradient
-                      BarChartGroupData(
-                        x: 0,
+                    barGroups: List.generate(_attendanceStats.length, (index) {
+                      return BarChartGroupData(
+                        x: index,
                         barRods: [
                           BarChartRodData(
-                            toY: 88,
+                            toY: _attendanceStats[index],
                             gradient: const LinearGradient(
                               colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
                               begin: Alignment.bottomCenter,
@@ -691,76 +697,8 @@ class _AdminDashboardState extends State<AdminDashboard>
                                 const BorderRadius.all(Radius.circular(4)),
                           ),
                         ],
-                      ),
-                      // Tuesday - Navy blue gradient
-                      BarChartGroupData(
-                        x: 1,
-                        barRods: [
-                          BarChartRodData(
-                            toY: 92,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                            ),
-                            width: 22,
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(4)),
-                          ),
-                        ],
-                      ),
-                      // Wednesday - Navy blue gradient
-                      BarChartGroupData(
-                        x: 2,
-                        barRods: [
-                          BarChartRodData(
-                            toY: 85,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                            ),
-                            width: 22,
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(4)),
-                          ),
-                        ],
-                      ),
-                      // Thursday - Navy blue gradient
-                      BarChartGroupData(
-                        x: 3,
-                        barRods: [
-                          BarChartRodData(
-                            toY: 78,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                            ),
-                            width: 22,
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(4)),
-                          ),
-                        ],
-                      ),
-                      // Friday - Navy blue gradient
-                      BarChartGroupData(
-                        x: 4,
-                        barRods: [
-                          BarChartRodData(
-                            toY: 90,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                            ),
-                            width: 22,
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(4)),
-                          ),
-                        ],
-                      ),
-                    ],
+                      );
+                    }),
                   ),
                 ),
               ),
