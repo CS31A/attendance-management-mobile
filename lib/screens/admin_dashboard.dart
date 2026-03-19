@@ -99,21 +99,34 @@ class _AdminDashboardState extends State<AdminDashboard>
         if (data is List) {
           final users = List<Map<String, dynamic>>.from(data);
 
+          // Debug: Print all unique roles
+          final uniqueRoles = users
+              .map((u) => u['role']?.toString() ?? 'null')
+              .toSet()
+              .toList();
+          print('🔍 Unique roles found: $uniqueRoles');
+          
+          // Debug: Print first 5 users with all their fields
+          print('🔍 First 5 users data:');
+          for (var i = 0; i < users.length && i < 5; i++) {
+            print('  User $i: ${users[i]}');
+          }
+          
+          // Debug: Count by role
+          final studentCount = users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'student').length;
+          final teacherCount = users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'teacher').length;
+          final adminCount = users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'admin').length;
+          print('📊 Role counts - Students: $studentCount, Teachers: $teacherCount, Admins: $adminCount');
+
           if (mounted) {
             setState(() {
               _totalUsers = users.length;
-              _totalStudents = users
-                  .where((u) =>
-                      (u['role']?.toString() ?? '').toLowerCase() == 'student')
-                  .length;
-              _totalTeachers = users
-                  .where((u) =>
-                      (u['role']?.toString() ?? '').toLowerCase() == 'teacher')
-                  .length;
-              _totalAdmins = users
-                  .where((u) =>
-                      (u['role']?.toString() ?? '').toLowerCase() == 'admin')
-                  .length;
+              _totalStudents = studentCount;
+              _totalTeachers = teacherCount;
+              _totalAdmins = adminCount;
+
+              // Debug: Print counts
+              print('📊 Dashboard State - Total: $_totalUsers, Students: $_totalStudents, Teachers: $_totalTeachers, Admins: $_totalAdmins');
 
               // Initialize attendance stats to zero (as no classes started yet)
               _attendanceStats = [0, 0, 0, 0, 0];
@@ -236,6 +249,22 @@ class _AdminDashboardState extends State<AdminDashboard>
             _buildModernHeader(),
 
             const SizedBox(height: 16),
+
+            // Debug info (temporary - remove after fixing)
+            if (_errorMessage != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red),
+                ),
+                child: Text(
+                  'Error: $_errorMessage',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
 
             // Stats Grid (2x2) - Updated with management items
             _buildStatsGrid(),

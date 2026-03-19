@@ -350,8 +350,15 @@ class ApiService {
             final role = normalized['role']?.toString() ?? '';
             // Capitalize first letter
             if (role.isNotEmpty) {
-              normalized['role'] =
+              var formattedRole =
                   role[0].toUpperCase() + role.substring(1).toLowerCase();
+              
+              // Normalize backend alias Instructor to Teacher
+              if (formattedRole == 'Instructor') {
+                formattedRole = 'Teacher';
+              }
+              
+              normalized['role'] = formattedRole;
             }
           }
 

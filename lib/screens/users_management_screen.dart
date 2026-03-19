@@ -40,10 +40,24 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       if (response['success'] == true) {
         final data = response['data'];
         if (data is List) {
+          // Debug: Print raw data
+          final users = List<Map<String, dynamic>>.from(data);
+          print('🔍 Total users fetched: ${users.length}');
+          
+          // Debug: Print all unique roles
+          final uniqueRoles = users
+              .map((u) => u['role']?.toString() ?? 'null')
+              .toSet()
+              .toList();
+          print('🔍 Unique roles in users management: $uniqueRoles');
+          
           setState(() {
-            _users = List<Map<String, dynamic>>.from(data);
+            _users = users;
             _isLoading = false;
           });
+          
+          // Debug: Print counts after state update
+          print('📊 Users Management - Total: $_totalUsersCount, Students: $_studentsCount, Teachers: $_teachersCount, Admins: $_adminsCount');
         } else {
           setState(() {
             _users = [];
