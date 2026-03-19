@@ -347,6 +347,35 @@ class _AdminDashboardState extends State<AdminDashboard>
                   ),
               ],
             ),
+            // Profile Icon (Circular)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 4; // Navigate to Profile screen
+                });
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.person,
+                  color: Color(0xFF3B82F6),
+                  size: 24,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
           ],
         ),
       ),
@@ -869,7 +898,7 @@ class _AdminDashboardState extends State<AdminDashboard>
         ],
       ),
       child: BottomNavigationBar(
-        currentIndex: _selectedIndex,
+        currentIndex: _selectedIndex > 3 ? 0 : _selectedIndex,
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
@@ -897,10 +926,6 @@ class _AdminDashboardState extends State<AdminDashboard>
           BottomNavigationBarItem(
             icon: Icon(Icons.people),
             label: 'Users',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
           ),
         ],
       ),

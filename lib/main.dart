@@ -7,6 +7,7 @@ import 'providers/app_data.dart';
 import 'services/api_service.dart';
 import 'services/storage_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'config/app_config.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -21,6 +22,7 @@ void main() async {
   HttpOverrides.global = MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  AppConfig.logConfigStatus();
   await AppStorage.init();
   final loggedIn = await AppStorage.isLoggedIn();
   runApp(MyApp(startLoggedIn: loggedIn));
@@ -110,9 +112,9 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       setState(() {
         _errorMessage =
-            'Unable to connect to server. Please check your internet connection.';
+            'Unable to connect to server ($e). Please check your internet connection.';
       });
-      print('Login error: $e');
+      print('❌ Login error: $e');
     } finally {
       if (mounted) {
         setState(() {

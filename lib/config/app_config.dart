@@ -19,4 +19,12 @@ class AppConfig {
   static const int primaryColorValue = 0xFF3B82F6;
   static const int secondaryColorValue = 0xFF1E3A8A;
   static const int accentColorValue = 0xFF60A5FA;
+
+  // Debug Helper
+  static void logConfigStatus() {
+    print('🚀 AppConfig Initialization:');
+    print('   - Base URL: $baseUrl');
+    print('   - App Name: $appName');
+    print('   - Version: $appVersion');
+  }
 }
