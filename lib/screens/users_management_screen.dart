@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/api_service.dart';
 import 'filtered_users_screen.dart';
-import 'add_user_screen.dart';
+import '../widgets/add_user_modal.dart';
 import 'students_management_screen.dart';
 import 'teachers_management_screen.dart';
 
@@ -744,11 +744,12 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   }
 
   void _openCreateUser() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => AddUserScreen(
-          onUserCreated: () => _loadUsers(),
-        ),
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddUserModal(
+        onUserCreated: () => _loadUsers(),
       ),
     );
     await _loadUsers();
