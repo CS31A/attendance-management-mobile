@@ -1,13 +1,16 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'teachers_management_screen.dart';
-import 'students_management_screen.dart';
+import '../services/api_service.dart';
+import '../services/storage_service.dart';
+import '../providers/app_data.dart';
+import '../main.dart';
 import 'users_management_screen.dart';
-import 'user_management_hub.dart';
-import '../services/app_data.dart';
 import 'reports_screen.dart';
-// Fix: Use consistent import name
-import 'admin_settings_screen.dart'; // Make sure this file exists
+import 'profile_screen.dart';
+import 'classes_screen.dart';
+import 'enrollment_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -16,34 +19,47 @@ class AdminDashboard extends StatefulWidget {
   State<AdminDashboard> createState() => _AdminDashboardState();
 }
 
-class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStateMixin {
+class _AdminDashboardState extends State<AdminDashboard>
+    with TickerProviderStateMixin {
+  final ApiService _apiService = ApiService();
+
   int _selectedIndex = 0;
   int _notificationCount = 3;
   String _selectedPeriod = 'Monthly';
-  
+
+  // Stats
+  bool _isLoading = false;
+  String? _errorMessage;
+  int _totalUsers = 0;
+  int _totalStudents = 0;
+  int _totalTeachers = 0;
+  int _totalAdmins = 0;
+
+  // Attendance Stats (Mon-Fri)
+  List<double> _attendanceStats = [0, 0, 0, 0, 0];
+
   late AnimationController _entranceController;
-  late AnimationController _cardAnimationController;
   late AnimationController _navigationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  late Animation<Offset> _navigationSlideAnimation;
 
   @override
   void initState() {
     super.initState();
+
+    // Initialize entrance animation controller
     _entranceController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
       vsync: this,
-    );
-    _cardAnimationController = AnimationController(
       duration: const Duration(milliseconds: 800),
-      vsync: this,
     );
+
+    // Initialize navigation animation controller
     _navigationController = AnimationController(
-      duration: const Duration(milliseconds: 400),
       vsync: this,
+      duration: const Duration(milliseconds: 500),
     );
-    
+
+    // Setup fade animation
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -51,62 +67,150 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       parent: _entranceController,
       curve: Curves.easeOut,
     ));
-    
+
+    // Setup slide animation
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
+      begin: const Offset(0.0, 0.1),
       end: Offset.zero,
     ).animate(CurvedAnimation(
       parent: _entranceController,
-      curve: Curves.easeOutCubic,
+      curve: Curves.easeOut,
     ));
-    
-    _navigationSlideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _navigationController,
-      curve: Curves.easeInOutCubic,
-    ));
-    
-    // Start animations
+
+    // Start entrance animation
     _entranceController.forward();
-    _navigationController.forward(); // Initialize navigation animation at end position
-    Future.delayed(const Duration(milliseconds: 300), () {
-      _cardAnimationController.forward();
+
+    // Load real data
+    _loadStats();
+  }
+
+  Future<void> _loadStats() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
     });
+
+    try {
+      final response = await _apiService.getUsers();
+      if (response['success'] == true) {
+        final data = response['data'];
+        if (data is List) {
+          final users = List<Map<String, dynamic>>.from(data);
+
+          // Debug: Print all unique roles
+          final uniqueRoles = users
+              .map((u) => u['role']?.toString() ?? 'null')
+              .toSet()
+              .toList();
+          print('🔍 Unique roles found: $uniqueRoles');
+          
+          // Debug: Print first 5 users with all their fields
+          print('🔍 First 5 users data:');
+          for (var i = 0; i < users.length && i < 5; i++) {
+            print('  User $i: ${users[i]}');
+          }
+          
+          // Debug: Count by role
+          final studentCount = users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'student').length;
+          final teacherCount = users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'teacher').length;
+          final adminCount = users.where((u) => (u['role']?.toString() ?? '').toLowerCase() == 'admin').length;
+          print('📊 Role counts - Students: $studentCount, Teachers: $teacherCount, Admins: $adminCount');
+
+          if (mounted) {
+            setState(() {
+              _totalUsers = users.length;
+              _totalStudents = studentCount;
+              _totalTeachers = teacherCount;
+              _totalAdmins = adminCount;
+
+              // Debug: Print counts
+              print('📊 Dashboard State - Total: $_totalUsers, Students: $_totalStudents, Teachers: $_totalTeachers, Admins: $_totalAdmins');
+
+              // Initialize attendance stats to zero (as no classes started yet)
+              _attendanceStats = [0, 0, 0, 0, 0];
+
+              _isLoading = false;
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _errorMessage = response['message'] ?? 'Failed to load stats';
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load stats: $e';
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
     _entranceController.dispose();
-    _cardAnimationController.dispose();
     _navigationController.dispose();
     super.dispose();
   }
 
   void _navigateToDashboard() {
-    _navigationController.reset();
     setState(() {
       _selectedIndex = 0;
     });
+
+    // Reset and play navigation animation
+    _navigationController.reset();
     _navigationController.forward();
+
+    // Reload stats when returning to dashboard
+    _loadStats();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Main Content
-            Expanded(
-              child: SlideTransition(
-                position: _navigationSlideAnimation,
-                child: _getSelectedContent(),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF1E3A8A),
+              Color(0xFF3B82F6),
+              Color(0xFF60A5FA),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Main Content
+              Expanded(
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: _getSelectedContent(),
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -118,43 +222,61 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
       case 0:
         return _buildDashboardContent();
       case 1:
+        return const EnrollmentScreen();
+      case 2:
+        return const ClassesScreen();
+      case 3:
         return UsersManagementScreen(
           onBackPressed: _navigateToDashboard,
         );
-      case 2:
-        return ReportsScreen(
-          onBackPressed: _navigateToDashboard,
-        );
-      case 3:
-        return AdminSettingsScreen(
-          onBackPressed: _navigateToDashboard,
-        );
+      case 4:
+        return const ProfileScreen();
       default:
         return _buildDashboardContent();
     }
   }
 
   Widget _buildDashboardContent() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with profile
-          _buildModernHeader(),
-          
-          const SizedBox(height: 24),
-          
-          // Stats Grid (2x2) - Updated with management items
-          _buildStatsGrid(),
-          
-          const SizedBox(height: 24),
-          
-          // Chart Section
-          _buildChartSection(),
-          
-          const SizedBox(height: 24),
-        ],
+    return RefreshIndicator(
+      onRefresh: _loadStats,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with profile
+            _buildModernHeader(),
+
+            const SizedBox(height: 16),
+
+            // Debug info (temporary - remove after fixing)
+            if (_errorMessage != null)
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red),
+                ),
+                child: Text(
+                  'Error: $_errorMessage',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+
+            // Stats Grid (2x2) - Updated with management items
+            _buildStatsGrid(),
+
+            const SizedBox(height: 24),
+
+            // Chart Section
+            _buildChartSection(),
+
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }
@@ -163,51 +285,126 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, -0.3),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _entranceController,
-          curve: const Interval(0.0, 0.6, curve: Curves.easeOutCubic),
-        )),
+        position: _slideAnimation,
         child: Row(
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Dashboard',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+            // Logo
+            SizedBox(
+              width: 50,
+              height: 50,
+              child: Image.asset(
+                'assets/acla logo.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Welcome back, Christian Dave',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
+                    child: const Icon(
+                      Icons.school,
+                      color: Colors.white,
+                      size: 30,
                     ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Dashboard Title
+            const Text(
+              'Dashboard',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    color: Colors.black26,
+                    offset: Offset(0, 2),
+                    blurRadius: 4,
                   ),
                 ],
               ),
             ),
-            // Profile Avatar
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.blue.withOpacity(0.3), width: 2),
-                image: const DecorationImage(
-                  image: NetworkImage('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'),
-                  fit: BoxFit.cover,
+            const Spacer(),
+            // Notification Icon
+            Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: Colors.white,
+                    size: 30,
+                  ),
+                  onPressed: () {
+                    // TODO: Implement notification panel
+                  },
+                ),
+                if (_notificationCount > 0)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        _notificationCount.toString(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            // Profile Icon (Circular)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 4; // Navigate to Profile screen
+                });
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.person,
+                  color: Color(0xFF3B82F6),
+                  size: 24,
                 ),
               ),
             ),
+            const SizedBox(width: 8),
           ],
         ),
       ),
@@ -218,80 +415,77 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.3),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _entranceController,
-          curve: const Interval(0.2, 0.7, curve: Curves.easeOutCubic),
-        )),
+        position: _slideAnimation,
         child: GridView.count(
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
-          childAspectRatio: 1.2,
+          childAspectRatio: 1.0,
           children: [
-            // Blue highlighted card - Total Registered (not clickable)
+            // Total Registered card
             _buildModernStatCard(
               title: 'Total Registered',
-              value: '1,336',
-              progress: 0.7,
-              color: Colors.blue,
-              bgColor: const Color(0xFF1E3A8A),
-              isHighlighted: true,
-              onTap: null, // Not clickable - display only
+              value: _isLoading ? '...' : _totalUsers.toString(),
+              progress: _totalUsers > 0 ? 1.0 : 0.0,
+              gradientColors: [
+                const Color(0xFF3B82F6),
+                const Color(0xFF60A5FA)
+              ],
+              icon: Icons.people_alt,
+              onTap: () {
+                setState(() {
+                  _selectedIndex = 3; // Go to Users Management
+                });
+              },
             ),
-            // Total Students (clickable)
+            // Total Students card
             _buildModernStatCard(
               title: 'Total Students',
-              value: '1,247',
-              progress: 0.3,
-              color: Colors.green,
-              bgColor: Colors.white,
-              isHighlighted: false,
+              value: _isLoading ? '...' : _totalStudents.toString(),
+              progress: _totalUsers > 0 ? (_totalStudents / _totalUsers) : 0.0,
+              gradientColors: [
+                const Color(0xFF10B981),
+                const Color(0xFF34D399)
+              ],
+              icon: Icons.school,
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const StudentsManagementScreen(),
-                  ),
-                );
+                setState(() {
+                  _selectedIndex = 3; // Go to Users Management
+                });
               },
             ),
-            // Total Teachers (clickable)
+            // Total Teachers card
             _buildModernStatCard(
               title: 'Total Teachers',
-              value: '89',
-              progress: 0.7,
-              color: Colors.orange,
-              bgColor: Colors.white,
-              isHighlighted: false,
+              value: _isLoading ? '...' : _totalTeachers.toString(),
+              progress: _totalUsers > 0 ? (_totalTeachers / _totalUsers) : 0.0,
+              gradientColors: [
+                const Color(0xFFF59E0B),
+                const Color(0xFFFBBF24)
+              ],
+              icon: Icons.person_outline,
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const TeachersManagementScreen(),
-                  ),
-                );
+                setState(() {
+                  _selectedIndex = 3; // Go to Users Management
+                });
               },
             ),
-            // User Management (clickable)
+            // User Management card
             _buildModernStatCard(
-              title: 'User Management',
-              value: '1,336',
-              progress: 0.7,
-              color: Colors.purple,
-              bgColor: Colors.white,
-              isHighlighted: false,
+              title: 'Admins',
+              value: _isLoading ? '...' : _totalAdmins.toString(),
+              progress: _totalUsers > 0 ? (_totalAdmins / _totalUsers) : 0.0,
+              gradientColors: [
+                const Color(0xFF8B5CF6),
+                const Color(0xFFA78BFA)
+              ],
+              icon: Icons.admin_panel_settings,
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const UsersManagementScreen(),
-                  ),
-                );
+                setState(() {
+                  _selectedIndex = 3; // Go to Users Management
+                });
               },
             ),
           ],
@@ -304,43 +498,71 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     required String title,
     required String value,
     required double progress,
-    required Color color,
-    required Color bgColor,
-    required bool isHighlighted,
+    required List<Color> gradientColors,
+    required IconData icon,
     VoidCallback? onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: bgColor,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 5),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: gradientColors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: gradientColors[0].withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             Text(
               value,
               style: TextStyle(
-                fontSize: 28,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: isHighlighted ? Colors.white : Colors.black87,
+                color: gradientColors[0],
               ),
             ),
             const SizedBox(height: 4),
             Text(
               title,
               style: TextStyle(
-                fontSize: 14,
-                color: isHighlighted ? Colors.white70 : Colors.grey[600],
+                fontSize: 12,
+                color: Colors.grey[700],
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -349,20 +571,27 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
               children: [
                 Expanded(
                   child: Container(
-                    height: 4,
+                    height: 5,
                     decoration: BoxDecoration(
-                      color: isHighlighted 
-                          ? Colors.white.withOpacity(0.3)
-                          : Colors.grey.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(2),
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(3),
                     ),
                     child: FractionallySizedBox(
                       alignment: Alignment.centerLeft,
-                      widthFactor: progress,
+                      widthFactor: progress.clamp(0.0, 1.0),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isHighlighted ? Colors.white : color,
-                          borderRadius: BorderRadius.circular(2),
+                          gradient: LinearGradient(
+                            colors: gradientColors,
+                          ),
+                          borderRadius: BorderRadius.circular(3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: gradientColors[0].withOpacity(0.5),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -373,8 +602,8 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
                   '${(progress * 100).toInt()}%',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isHighlighted ? Colors.white70 : Colors.grey[600],
-                    fontWeight: FontWeight.w500,
+                    color: gradientColors[0],
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -389,13 +618,7 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.3),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _entranceController,
-          curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
-        )),
+        position: _slideAnimation,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(24),
@@ -404,9 +627,9 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 5),
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
@@ -414,145 +637,126 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Performance',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                  const Expanded(
+                    child: Text(
+                      'Attendance Overview',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF3B82F6),
+                      ),
                     ),
                   ),
-                  Row(
-                    children: ['Today', 'Weeks', 'Months'].map((period) {
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedPeriod = period;
-                          });
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(left: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: _selectedPeriod == period 
-                                ? Colors.blue 
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            period,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: _selectedPeriod == period 
-                                  ? Colors.white 
-                                  : Colors.grey[600],
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                  Flexible(
+                    child: _buildPeriodSelector(),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
               SizedBox(
                 height: 200,
-                child: LineChart(
-                  LineChartData(
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: false,
-                      horizontalInterval: 10,
-                      getDrawingHorizontalLine: (value) {
-                        return FlLine(
-                          color: Colors.grey.withOpacity(0.2),
-                          strokeWidth: 1,
-                        );
-                      },
+                child: BarChart(
+                  BarChartData(
+                    alignment: BarChartAlignment.spaceAround,
+                    maxY: 100,
+                    barTouchData: BarTouchData(
+                      enabled: true,
+                      touchTooltipData: BarTouchTooltipData(
+                        tooltipBgColor: Colors.white.withOpacity(0.9),
+                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                          return BarTooltipItem(
+                            '${rod.toY.round()}%',
+                            const TextStyle(
+                              color: Color(0xFF1E3A8A),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        },
+                      ),
                     ),
                     titlesData: FlTitlesData(
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      leftTitles: AxisTitles(
+                      show: true,
+                      bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 40,
-                          getTitlesWidget: (value, meta) {
+                          getTitlesWidget: (double value, TitleMeta meta) {
+                            String text = '';
+                            switch (value.toInt()) {
+                              case 0:
+                                text = 'Mon';
+                                break;
+                              case 1:
+                                text = 'Tue';
+                                break;
+                              case 2:
+                                text = 'Wed';
+                                break;
+                              case 3:
+                                text = 'Thu';
+                                break;
+                              case 4:
+                                text = 'Fri';
+                                break;
+                            }
                             return Text(
-                              value.toInt().toString(),
+                              text,
                               style: TextStyle(
-                                color: Colors.grey[600],
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.bold,
                                 fontSize: 12,
                               ),
                             );
                           },
+                          reservedSize: 30,
                         ),
                       ),
-                      bottomTitles: AxisTitles(
+                      leftTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            const titles = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-                            if (value.toInt() >= 0 && value.toInt() < titles.length) {
-                              return Text(
-                                titles[value.toInt()],
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
-                              );
+                          getTitlesWidget: (double value, TitleMeta meta) {
+                            String text = '';
+                            if (value == 0) {
+                              text = '0%';
+                            } else if (value == 50) {
+                              text = '50%';
+                            } else if (value == 100) {
+                              text = '100%';
                             }
-                            return const Text('');
+                            return Text(
+                              text,
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            );
                           },
+                          reservedSize: 30,
                         ),
                       ),
                     ),
-                    borderData: FlBorderData(show: false),
-                    minX: 0,
-                    maxX: 6,
-                    minY: 0,
-                    maxY: 60,
-                    lineBarsData: [
-                      // Pink line (lighter)
-                      LineChartBarData(
-                        spots: [
-                          const FlSpot(0, 30),
-                          const FlSpot(1, 45),
-                          const FlSpot(2, 35),
-                          const FlSpot(3, 50),
-                          const FlSpot(4, 40),
-                          const FlSpot(5, 55),
-                          const FlSpot(6, 45),
+                    borderData: FlBorderData(
+                      show: false,
+                    ),
+                    barGroups: List.generate(_attendanceStats.length, (index) {
+                      return BarChartGroupData(
+                        x: index,
+                        barRods: [
+                          BarChartRodData(
+                            toY: _attendanceStats[index],
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                            ),
+                            width: 22,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(4)),
+                          ),
                         ],
-                        isCurved: true,
-                        color: Colors.pink.withOpacity(0.7),
-                        barWidth: 3,
-                        isStrokeCapRound: true,
-                        dotData: const FlDotData(show: false),
-                        belowBarData: BarAreaData(show: false),
-                      ),
-                      // Dark line (main)
-                      LineChartBarData(
-                        spots: [
-                          const FlSpot(0, 20),
-                          const FlSpot(1, 35),
-                          const FlSpot(2, 25),
-                          const FlSpot(3, 40),
-                          const FlSpot(4, 15),
-                          const FlSpot(5, 25),
-                          const FlSpot(6, 20),
-                        ],
-                        isCurved: true,
-                        color: Colors.black87,
-                        barWidth: 4,
-                        isStrokeCapRound: true,
-                        dotData: const FlDotData(show: false),
-                        belowBarData: BarAreaData(show: false),
-                      ),
-                    ],
+                      );
+                    }),
                   ),
                 ),
               ),
@@ -563,10 +767,66 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     );
   }
 
+  Widget _buildPeriodSelector() {
+    final periods = ['Today', 'Weekly', 'Monthly'];
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: periods.map((period) {
+        final isSelected = _selectedPeriod == period;
+        final blue = const Color(0xFF3B82F6);
+        final lightBlue = const Color(0xFF60A5FA);
+
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedPeriod = period;
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: isSelected
+                  ? LinearGradient(
+                      colors: [blue, lightBlue],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : null,
+              color: isSelected ? null : Colors.grey[200],
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isSelected ? blue : Colors.grey[300]!,
+                width: isSelected ? 1.5 : 1,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: blue.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Text(
+              period,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? Colors.white : Colors.grey[700],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildReportsContent() {
     return const ReportsScreen();
   }
-  
+
   Widget _buildClassesContent() {
     return const Center(
       child: Text(
@@ -581,60 +841,122 @@ class _AdminDashboardState extends State<AdminDashboard> with TickerProviderStat
     );
   }
 
-  Widget _buildBottomNavigationBar() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.5),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(
-          parent: _entranceController,
-          curve: const Interval(0.6, 1.0, curve: Curves.easeOutCubic),
-        )),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, -5),
-              ),
-            ],
+  Widget _buildNotificationCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
-          child: BottomNavigationBar(
-            currentIndex: _selectedIndex,
-            onTap: (index) {
-              setState(() {
-                _selectedIndex = index;
-              });
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.notifications_active,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "New System Update Available",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF3B82F6),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Tap to view the latest features and improvements",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.arrow_forward_ios,
+              color: Color(0xFF3B82F6),
+              size: 16,
+            ),
+            onPressed: () {
+              // Handle notification tap
             },
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.white,
-            selectedItemColor: Colors.blue,
-            unselectedItemColor: Colors.grey,
-            elevation: 0,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home),
-                label: 'Dashboard',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.analytics),
-                label: 'Users',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.assessment),
-                label: 'Reports',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.settings),
-                label: 'Settings',
-              ),
-            ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: BottomNavigationBar(
+        currentIndex: _selectedIndex > 3 ? 0 : _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.transparent,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white.withOpacity(0.7),
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment),
+            label: 'Enrollment',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.class_),
+            label: 'Classes',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: 'Users',
+          ),
+        ],
       ),
     );
   }
