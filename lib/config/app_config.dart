@@ -4,7 +4,7 @@ class AppConfig {
   // API Configuration
   static String get baseUrl =>
       dotenv.env['API_URL'] ??
-      'http://attendance.eba-8g72z7wh.ap-southeast-1.elasticbeanstalk.com';
+      'https://ams-bpcac7gvb5cnhtdt.southeastasia-01.azurewebsites.net';
 
   // App Information
   static const String appName = 'Attendance Management';
