@@ -109,15 +109,25 @@ class ApiService {
       if (response.statusCode == 200) {
         return {
           'success': responseData['success'] ?? true,
-          'message': responseData['message'],
-          'accessToken': responseData['accessToken'],
-          'refreshToken': responseData['refreshToken'],
-          'user': responseData['user'],
+          'message': responseData['message']?.toString(),
+          'accessToken': responseData['accessToken']?.toString(),
+          'refreshToken': responseData['refreshToken']?.toString(),
+          'user': responseData['user'] is Map ? Map<String, dynamic>.from(responseData['user'] as Map) : null,
         };
       } else {
+        // Handle error response - extract message from various possible locations
+        String errorMessage = 'Login failed';
+        if (responseData['message'] != null) {
+          errorMessage = responseData['message'].toString();
+        } else if (responseData['details'] != null) {
+          errorMessage = responseData['details'].toString();
+        } else if (responseData['error'] != null) {
+          errorMessage = responseData['error'].toString();
+        }
+        
         return {
           'success': false,
-          'message': responseData['message'] ?? 'Login failed',
+          'message': errorMessage,
           'accessToken': null,
           'refreshToken': null,
           'user': null,

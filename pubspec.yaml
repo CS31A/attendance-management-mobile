@@ -20,7 +20,12 @@ dependencies:
   shared_preferences: ^2.2.2
   fl_chart: ^0.65.0
   http: ^1.1.0
-  flutter_dotenv: ^5.1.0
+  flutter_dotenv: ^6.0.0
+  ams_student:
+    path: packages/ams_student
+  teacher_mobile:
+    path: packages/ams-teacher-mobile
+  flutter_riverpod: ^2.5.1
 
 dev_dependencies:
   flutter_test:

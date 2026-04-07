@@ -166,7 +166,7 @@ class AppStorage {
       final u = prefs.getString(keyUsers);
       if (u != null) {
         final decoded = (jsonDecode(u) as List).cast<Map>().map((e) {
-          final map = e.map((k, v) => MapEntry(k.toString(), v));
+          final map = Map<String, dynamic>.from(e);
           final dynamic colorVal = map['color'];
           if (colorVal is int) {
             map['color'] = Color(colorVal);
@@ -175,7 +175,7 @@ class AppStorage {
             if (parsed != null) map['color'] = Color(parsed);
           }
           return map;
-        }).toList().cast<Map<String, dynamic>>();
+        }).toList();
         AppData.users.value = decoded;
         print('Loaded ${decoded.length} users from SharedPreferences');
       }

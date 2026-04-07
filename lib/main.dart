@@ -9,6 +9,12 @@ import 'services/storage_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'config/app_config.dart';
 
+// Import sub-packages
+import 'package:ams_student/presentation/screens/dashboard/dashboard_screen.dart' as student;
+import 'package:teacher_mobile/screens/dashboard_screen.dart' as teacher;
+import 'package:teacher_mobile/services/storage_service.dart' as teacher_storage;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
@@ -88,8 +94,14 @@ class _LoginScreenState extends State<LoginScreen> {
       print('📦 Login Response: $response');
 
       if (response['success'] == true && response['accessToken'] != null) {
-        // Save tokens
+        // Save tokens for Admin/Student (SharedPrefs - both use same keys)
         await StorageService.saveTokens(
+          response['accessToken'] as String,
+          response['refreshToken'] as String? ?? '',
+        );
+
+        // Save tokens for Teacher (SecureStorage)
+        await teacher_storage.StorageService.saveTokens(
           response['accessToken'] as String,
           response['refreshToken'] as String? ?? '',
         );
@@ -97,12 +109,63 @@ class _LoginScreenState extends State<LoginScreen> {
         // Save login status
         await AppStorage.setLoggedIn(true);
 
+        // Determine Role - with comprehensive debugging
+        final user = response['user'] as Map<String, dynamic>?;
+        var role = user?['role']?.toString().toLowerCase() ?? '';
+        
+        // Fallback: check if role is at top level of response
+        if (role.isEmpty) {
+          role = response['role']?.toString().toLowerCase() ?? '';
+        }
+        
+        // If still empty, try to fetch from profile
+        if (role.isEmpty) {
+          print('⚠️ WARNING: Role not found in response, attempting to fetch from profile...');
+          try {
+            final profileResponse = await _apiService.getCurrentAccount();
+            if (profileResponse['success'] == true && profileResponse['data'] != null) {
+              final profileData = profileResponse['data'] as Map<String, dynamic>;
+              role = profileData['role']?.toString().toLowerCase() ?? 'admin';
+              print('✅ Role fetched from profile: $role');
+            }
+          } catch (e) {
+            print('❌ Error fetching profile: $e');
+          }
+        }
+        
+        // If still empty, default to admin
+        if (role.isEmpty) {
+          role = 'admin';
+        }
+        
+        print('🔍 DEBUG: Full response: $response');
+        print('🔍 DEBUG: User object: $user');
+        print('🔍 DEBUG: Role from user: ${user?['role']}');
+        print('🔍 DEBUG: Role from top-level: ${response['role']}');
+        print('🔍 DEBUG: Final role (lowercase): $role');
+        print('🔍 DEBUG: Role == teacher: ${role == 'teacher'}');
+        print('🔍 DEBUG: Role == instructor: ${role == 'instructor'}');
+
         if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const AdminDashboard(),
-            ),
-          );
+          if (role == 'student') {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const student.DashboardScreen(),
+              ),
+            );
+          } else if (role == 'instructor' || role == 'teacher') {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const ProviderScope(child: teacher.DashboardScreen()),
+              ),
+            );
+          } else {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const AdminDashboard(),
+              ),
+            );
+          }
         }
       } else {
         setState(() {
@@ -176,7 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                       child: Container(
-                        padding: const EdgeInsets.all(32),
+                        padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(24),

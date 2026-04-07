@@ -1,0 +1,4 @@
+Resolving dependencies...
+Because every version of teacher_mobile from path depends on flutter_dotenv ^6.0.0 and mobile_ui depends on flutter_dotenv ^5.1.0, teacher_mobile from path is forbidden.
+So, because mobile_ui depends on teacher_mobile from path, version solving failed.
+Failed to update packages.
