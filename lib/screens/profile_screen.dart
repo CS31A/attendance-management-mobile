@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../providers/app_data.dart';
+import '../utils/responsive.dart';
 import '../main.dart';
 
 class ProfileScreen extends StatefulWidget {

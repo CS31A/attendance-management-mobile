@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../providers/app_data.dart';
 import '../main.dart';
+import '../utils/responsive.dart';
 import 'users_management_screen.dart';
 import 'reports_screen.dart';
 import 'profile_screen.dart';
@@ -241,40 +242,43 @@ class _AdminDashboardState extends State<AdminDashboard>
       onRefresh: _loadStats,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        padding: Responsive.padding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header with profile
             _buildModernHeader(),
 
-            const SizedBox(height: 16),
+            SizedBox(height: Responsive.spacing(context, mobile: 12, tablet: 16, desktop: 20)),
 
             // Debug info (temporary - remove after fixing)
             if (_errorMessage != null)
               Container(
-                padding: const EdgeInsets.all(12),
-                margin: const EdgeInsets.only(bottom: 16),
+                padding: EdgeInsets.all(Responsive.spacing(context, mobile: 8, tablet: 12, desktop: 16)),
+                margin: EdgeInsets.only(bottom: Responsive.spacing(context, mobile: 12, tablet: 16, desktop: 20)),
                 decoration: BoxDecoration(
                   color: Colors.red.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(Responsive.borderRadius(context)),
                   border: Border.all(color: Colors.red),
                 ),
                 child: Text(
                   'Error: $_errorMessage',
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: Responsive.fontSize(context, mobile: 12, tablet: 14, desktop: 16),
+                  ),
                 ),
               ),
 
             // Stats Grid (2x2) - Updated with management items
             _buildStatsGrid(),
 
-            const SizedBox(height: 24),
+            SizedBox(height: Responsive.spacing(context, mobile: 16, tablet: 20, desktop: 24)),
 
             // Chart Section
             _buildChartSection(),
 
-            const SizedBox(height: 24),
+            SizedBox(height: Responsive.spacing(context, mobile: 16, tablet: 20, desktop: 24)),
           ],
         ),
       ),
@@ -417,11 +421,11 @@ class _AdminDashboardState extends State<AdminDashboard>
       child: SlideTransition(
         position: _slideAnimation,
         child: GridView.count(
-          crossAxisCount: 2,
+          crossAxisCount: Responsive.gridColumns(context),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
+          mainAxisSpacing: Responsive.spacing(context, mobile: 12, tablet: 16, desktop: 20),
+          crossAxisSpacing: Responsive.spacing(context, mobile: 12, tablet: 16, desktop: 20),
           childAspectRatio: 1.0,
           children: [
             // Total Registered card
@@ -505,10 +509,10 @@ class _AdminDashboardState extends State<AdminDashboard>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(Responsive.spacing(context, mobile: 12, tablet: 16, desktop: 20)),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(Responsive.borderRadius(context)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -524,14 +528,14 @@ class _AdminDashboardState extends State<AdminDashboard>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(Responsive.spacing(context, mobile: 6, tablet: 8, desktop: 10)),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: gradientColors,
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(Responsive.borderRadius(context) - 4),
                     boxShadow: [
                       BoxShadow(
                         color: gradientColors[0].withOpacity(0.3),
@@ -543,25 +547,25 @@ class _AdminDashboardState extends State<AdminDashboard>
                   child: Icon(
                     icon,
                     color: Colors.white,
-                    size: 20,
+                    size: Responsive.iconSize(context, mobile: 18, tablet: 22, desktop: 26),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: Responsive.spacing(context, mobile: 8, tablet: 12, desktop: 16)),
             Text(
               value,
               style: TextStyle(
-                fontSize: 24,
+                fontSize: Responsive.headingFontSize(context, mobile: 20, tablet: 24, desktop: 28),
                 fontWeight: FontWeight.bold,
                 color: gradientColors[0],
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: Responsive.spacing(context, mobile: 2, tablet: 4, desktop: 6)),
             Text(
               title,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: Responsive.fontSize(context, mobile: 11, tablet: 12, desktop: 14),
                 color: Colors.grey[700],
                 fontWeight: FontWeight.w500,
               ),

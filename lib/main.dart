@@ -30,7 +30,24 @@ void main() async {
   await dotenv.load(fileName: ".env");
   AppConfig.logConfigStatus();
   await AppStorage.init();
-  final loggedIn = await AppStorage.isLoggedIn();
+  
+  // Check if user was previously logged in
+  bool loggedIn = await AppStorage.isLoggedIn();
+  
+  // If logged in, verify the token is still valid
+  if (loggedIn) {
+    try {
+      final token = await StorageService.getAccessToken();
+      if (token == null || token.isEmpty) {
+        loggedIn = false;
+        await AppStorage.setLoggedIn(false);
+      }
+    } catch (e) {
+      loggedIn = false;
+      await AppStorage.setLoggedIn(false);
+    }
+  }
+  
   runApp(MyApp(startLoggedIn: loggedIn));
 }
 
@@ -40,13 +57,15 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Attendance Monitoring',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+    return ProviderScope(
+      child: MaterialApp(
+        title: 'Attendance Monitoring',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: startLoggedIn ? const AdminDashboard() : const LoginScreen(),
       ),
-      home: startLoggedIn ? const AdminDashboard() : const LoginScreen(),
     );
   }
 }
@@ -156,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
           } else if (role == 'instructor' || role == 'teacher') {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => const ProviderScope(child: teacher.DashboardScreen()),
+                builder: (context) => const teacher.DashboardScreen(),
               ),
             );
           } else {

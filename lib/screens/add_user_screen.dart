@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../utils/responsive.dart';
 
 class AddUserScreen extends StatefulWidget {
   final VoidCallback? onUserCreated;
@@ -244,26 +245,28 @@ class _AddUserScreenState extends State<AddUserScreen> {
             children: [
               // Header
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: Responsive.paddingHorizontal(context).copyWith(
+                  top: Responsive.spacing(context, mobile: 8, tablet: 12, desktop: 16),
+                  bottom: Responsive.spacing(context, mobile: 8, tablet: 12, desktop: 16),
+                ),
                 child: Row(
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Add User',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 24,
+                          fontSize: Responsive.headingFontSize(context, mobile: 20, tablet: 24, desktop: 28),
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 48), // Balance back button
+                    SizedBox(width: Responsive.spacing(context, mobile: 40, tablet: 48, desktop: 56)), // Balance back button
                   ],
                 ),
               ),
@@ -271,7 +274,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
               // Form Content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  padding: Responsive.padding(context),
                   child: Form(
                     key: _formKey,
                     child: Column(
