@@ -7,6 +7,7 @@ import '../services/storage_service.dart';
 import '../providers/app_data.dart';
 import '../main.dart';
 import '../utils/responsive.dart';
+import '../utils/glassmorphism.dart';
 import 'users_management_screen.dart';
 import 'reports_screen.dart';
 import 'profile_screen.dart';
@@ -508,111 +509,120 @@ class _AdminDashboardState extends State<AdminDashboard>
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(Responsive.spacing(context, mobile: 12, tablet: 16, desktop: 20)),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(Responsive.borderRadius(context)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(Responsive.spacing(context, mobile: 6, tablet: 8, desktop: 10)),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: gradientColors,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(Responsive.borderRadius(context) - 4),
-                    boxShadow: [
-                      BoxShadow(
-                        color: gradientColors[0].withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    icon,
-                    color: Colors.white,
-                    size: Responsive.iconSize(context, mobile: 18, tablet: 22, desktop: 26),
-                  ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(Responsive.borderRadius(context)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: EdgeInsets.all(Responsive.spacing(context, mobile: 12, tablet: 16, desktop: 20)),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(Responsive.borderRadius(context)),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
-            SizedBox(height: Responsive.spacing(context, mobile: 8, tablet: 12, desktop: 16)),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: Responsive.headingFontSize(context, mobile: 20, tablet: 24, desktop: 28),
-                fontWeight: FontWeight.bold,
-                color: gradientColors[0],
-              ),
-            ),
-            SizedBox(height: Responsive.spacing(context, mobile: 2, tablet: 4, desktop: 6)),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: Responsive.fontSize(context, mobile: 11, tablet: 12, desktop: 14),
-                color: Colors.grey[700],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const Spacer(),
-            Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Container(
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: progress.clamp(0.0, 1.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: gradientColors,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(Responsive.spacing(context, mobile: 6, tablet: 8, desktop: 10)),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: gradientColors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(Responsive.borderRadius(context) - 4),
+                        boxShadow: [
+                          BoxShadow(
+                            color: gradientColors[0].withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
                           ),
+                        ],
+                      ),
+                      child: Icon(
+                        icon,
+                        color: Colors.white,
+                        size: Responsive.iconSize(context, mobile: 18, tablet: 22, desktop: 26),
+                      ),
+                    ),
+                    Text(
+                      '${(progress * 100).toStringAsFixed(0)}%',
+                      style: TextStyle(
+                        fontSize: Responsive.fontSize(context, mobile: 12, tablet: 14, desktop: 16),
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: Responsive.spacing(context, mobile: 8, tablet: 12, desktop: 16)),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: Responsive.headingFontSize(context, mobile: 20, tablet: 24, desktop: 28),
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: Responsive.spacing(context, mobile: 2, tablet: 4, desktop: 6)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: Responsive.fontSize(context, mobile: 11, tablet: 12, desktop: 14),
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const Spacer(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: gradientColors[0].withOpacity(0.5),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: progress.clamp(0.0, 1.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: gradientColors,
+                              ),
+                              borderRadius: BorderRadius.circular(3),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: gradientColors[0].withOpacity(0.5),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${(progress * 100).toInt()}%',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: gradientColors[0],
-                    fontWeight: FontWeight.w600,
-                  ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -623,148 +633,158 @@ class _AdminDashboardState extends State<AdminDashboard>
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Attendance Overview',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF3B82F6),
-                      ),
-                    ),
-                  ),
-                  Flexible(
-                    child: _buildPeriodSelector(),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              SizedBox(
-                height: 200,
-                child: BarChart(
-                  BarChartData(
-                    alignment: BarChartAlignment.spaceAround,
-                    maxY: 100,
-                    barTouchData: BarTouchData(
-                      enabled: true,
-                      touchTooltipData: BarTouchTooltipData(
-                        tooltipBgColor: Colors.white.withOpacity(0.9),
-                        getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                          return BarTooltipItem(
-                            '${rod.toY.round()}%',
-                            const TextStyle(
-                              color: Color(0xFF1E3A8A),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    titlesData: FlTitlesData(
-                      show: true,
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (double value, TitleMeta meta) {
-                            String text = '';
-                            switch (value.toInt()) {
-                              case 0:
-                                text = 'Mon';
-                                break;
-                              case 1:
-                                text = 'Tue';
-                                break;
-                              case 2:
-                                text = 'Wed';
-                                break;
-                              case 3:
-                                text = 'Thu';
-                                break;
-                              case 4:
-                                text = 'Fri';
-                                break;
-                            }
-                            return Text(
-                              text,
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            );
-                          },
-                          reservedSize: 30,
-                        ),
-                      ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (double value, TitleMeta meta) {
-                            String text = '';
-                            if (value == 0) {
-                              text = '0%';
-                            } else if (value == 50) {
-                              text = '50%';
-                            } else if (value == 100) {
-                              text = '100%';
-                            }
-                            return Text(
-                              text,
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            );
-                          },
-                          reservedSize: 30,
-                        ),
-                      ),
-                    ),
-                    borderData: FlBorderData(
-                      show: false,
-                    ),
-                    barGroups: List.generate(_attendanceStats.length, (index) {
-                      return BarChartGroupData(
-                        x: index,
-                        barRods: [
-                          BarChartRodData(
-                            toY: _attendanceStats[index],
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                            ),
-                            width: 22,
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(4)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Attendance Overview',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                        ],
-                      );
-                    }),
+                        ),
+                      ),
+                      Flexible(
+                        child: _buildPeriodSelector(),
+                      ),
+                    ],
                   ),
-                ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 200,
+                    child: BarChart(
+                      BarChartData(
+                        alignment: BarChartAlignment.spaceAround,
+                        maxY: 100,
+                        barTouchData: BarTouchData(
+                          enabled: true,
+                          touchTooltipData: BarTouchTooltipData(
+                            tooltipBgColor: Colors.white.withOpacity(0.9),
+                            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                              return BarTooltipItem(
+                                '${rod.toY.round()}%',
+                                const TextStyle(
+                                  color: Color(0xFF1E3A8A),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        titlesData: FlTitlesData(
+                          show: true,
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (double value, TitleMeta meta) {
+                                String text = '';
+                                switch (value.toInt()) {
+                                  case 0:
+                                    text = 'Mon';
+                                    break;
+                                  case 1:
+                                    text = 'Tue';
+                                    break;
+                                  case 2:
+                                    text = 'Wed';
+                                    break;
+                                  case 3:
+                                    text = 'Thu';
+                                    break;
+                                  case 4:
+                                    text = 'Fri';
+                                    break;
+                                }
+                                return Text(
+                                  text,
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                );
+                              },
+                              reservedSize: 30,
+                            ),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (double value, TitleMeta meta) {
+                                String text = '';
+                                if (value == 0) {
+                                  text = '0%';
+                                } else if (value == 50) {
+                                  text = '50%';
+                                } else if (value == 100) {
+                                  text = '100%';
+                                }
+                                return Text(
+                                  text,
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                );
+                              },
+                              reservedSize: 30,
+                            ),
+                          ),
+                        ),
+                        borderData: FlBorderData(
+                          show: false,
+                        ),
+                        barGroups: List.generate(_attendanceStats.length, (index) {
+                          return BarChartGroupData(
+                            x: index,
+                            barRods: [
+                              BarChartRodData(
+                                toY: _attendanceStats[index],
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF3B82F6), Color(0xFF60A5FA)],
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                ),
+                                width: 22,
+                                borderRadius:
+                                    const BorderRadius.all(Radius.circular(4)),
+                              ),
+                            ],
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -787,38 +807,44 @@ class _AdminDashboardState extends State<AdminDashboard>
               _selectedPeriod = period;
             });
           },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              gradient: isSelected
-                  ? LinearGradient(
-                      colors: [blue, lightBlue],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                  : null,
-              color: isSelected ? null : Colors.grey[200],
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isSelected ? blue : Colors.grey[300]!,
-                width: isSelected ? 1.5 : 1,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: blue.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Text(
-              period,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? Colors.white : Colors.grey[700],
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? LinearGradient(
+                          colors: [blue, lightBlue],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : null,
+                  color: isSelected ? null : Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isSelected ? blue : Colors.white.withOpacity(0.2),
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: blue.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  period,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected ? Colors.white : Colors.white70,
+                  ),
+                ),
               ),
             ),
           ),
