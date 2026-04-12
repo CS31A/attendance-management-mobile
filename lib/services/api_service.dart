@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
 import 'storage_service.dart';
@@ -91,6 +92,12 @@ class ApiService {
         url,
         headers: headers,
         body: jsonEncode(body),
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          print('❌ Login request timeout after 30 seconds');
+          throw TimeoutException('Login request timeout');
+        },
       );
 
       print('📥 Response status: ${response.statusCode}');
@@ -112,7 +119,8 @@ class ApiService {
           'message': responseData['message']?.toString(),
           'accessToken': responseData['accessToken']?.toString(),
           'refreshToken': responseData['refreshToken']?.toString(),
-          'user': responseData['user'] is Map ? Map<String, dynamic>.from(responseData['user'] as Map) : null,
+          'role': responseData['role']?.toString(),
+          'user': responseData['user'],
         };
       } else {
         // Handle error response - extract message from various possible locations
@@ -130,15 +138,25 @@ class ApiService {
           'message': errorMessage,
           'accessToken': null,
           'refreshToken': null,
+          'role': null,
           'user': null,
         };
       }
     } catch (e) {
       print('❌ Login error: $e');
+      String errorMessage = 'Failed to connect to server. Please check your internet connection.';
+      
+      if (e is TimeoutException) {
+        errorMessage = 'Connection timeout. Server is taking too long to respond. Please try again.';
+      } else if (e.toString().contains('SocketException')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (e.toString().contains('HandshakeException')) {
+        errorMessage = 'SSL certificate error. Please try again later.';
+      }
+      
       return {
         'success': false,
-        'message':
-            'Failed to connect to server. Please check your internet connection.',
+        'message': errorMessage,
         'accessToken': null,
         'refreshToken': null,
         'user': null,

@@ -35,12 +35,15 @@ void main() async {
   bool loggedIn = await AppStorage.isLoggedIn();
   
   // If logged in, verify the token is still valid
+  String? role;
   if (loggedIn) {
     try {
       final token = await StorageService.getAccessToken();
       if (token == null || token.isEmpty) {
         loggedIn = false;
         await AppStorage.setLoggedIn(false);
+      } else {
+        role = await AppStorage.getUserRole();
       }
     } catch (e) {
       loggedIn = false;
@@ -48,12 +51,13 @@ void main() async {
     }
   }
   
-  runApp(MyApp(startLoggedIn: loggedIn));
+  runApp(MyApp(startLoggedIn: loggedIn, initialRole: role));
 }
 
 class MyApp extends StatelessWidget {
   final bool startLoggedIn;
-  const MyApp({super.key, required this.startLoggedIn});
+  final String? initialRole;
+  const MyApp({super.key, required this.startLoggedIn, this.initialRole});
 
   @override
   Widget build(BuildContext context) {
@@ -64,9 +68,22 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: startLoggedIn ? const AdminDashboard() : const LoginScreen(),
+        home: startLoggedIn 
+            ? _getDashboardForRole(initialRole ?? 'admin') 
+            : const LoginScreen(),
       ),
     );
+  }
+
+  Widget _getDashboardForRole(String role) {
+    final lowerRole = role.toLowerCase();
+    if (lowerRole == 'student') {
+      return const student.DashboardScreen();
+    } else if (lowerRole == 'instructor' || lowerRole == 'teacher') {
+      return const teacher.DashboardScreen();
+    } else {
+      return const AdminDashboard();
+    }
   }
 }
 
@@ -128,42 +145,16 @@ class _LoginScreenState extends State<LoginScreen> {
         // Save login status
         await AppStorage.setLoggedIn(true);
 
-        // Determine Role - with comprehensive debugging
-        final user = response['user'] as Map<String, dynamic>?;
-        var role = user?['role']?.toString().toLowerCase() ?? '';
-        
-        // Fallback: check if role is at top level of response
-        if (role.isEmpty) {
-          role = response['role']?.toString().toLowerCase() ?? '';
-        }
-        
-        // If still empty, try to fetch from profile
-        if (role.isEmpty) {
-          print('⚠️ WARNING: Role not found in response, attempting to fetch from profile...');
-          try {
-            final profileResponse = await _apiService.getCurrentAccount();
-            if (profileResponse['success'] == true && profileResponse['data'] != null) {
-              final profileData = profileResponse['data'] as Map<String, dynamic>;
-              role = profileData['role']?.toString().toLowerCase() ?? 'admin';
-              print('✅ Role fetched from profile: $role');
-            }
-          } catch (e) {
-            print('❌ Error fetching profile: $e');
-          }
-        }
-        
-        // If still empty, default to admin
-        if (role.isEmpty) {
-          role = 'admin';
-        }
+        // Determine Role from response
+        var role = response['role']?.toString().toLowerCase() ?? 'admin';
+        await AppStorage.setUserRole(role);
         
         print('🔍 DEBUG: Full response: $response');
-        print('🔍 DEBUG: User object: $user');
-        print('🔍 DEBUG: Role from user: ${user?['role']}');
-        print('🔍 DEBUG: Role from top-level: ${response['role']}');
+        print('🔍 DEBUG: Role from response: ${response['role']}');
         print('🔍 DEBUG: Final role (lowercase): $role');
         print('🔍 DEBUG: Role == teacher: ${role == 'teacher'}');
         print('🔍 DEBUG: Role == instructor: ${role == 'instructor'}');
+        print('🔍 DEBUG: Role == admin: ${role == 'admin'}');
 
         if (mounted) {
           if (role == 'student') {
@@ -179,6 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             );
           } else {
+            // Default to admin for 'admin' role or any other role
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (context) => const AdminDashboard(),

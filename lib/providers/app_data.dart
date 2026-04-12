@@ -142,6 +142,7 @@ class AppStorage {
   static const String keyStudents = 'app_students';
   static const String keyUsers = 'app_users';
   static const String keyLoggedIn = 'app_logged_in';
+  static const String keyUserRole = 'app_user_role';
 
   static Future<void> init() async {
     try {
@@ -220,6 +221,16 @@ class AppStorage {
   static Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(keyLoggedIn) ?? false;
+  }
+
+  static Future<void> setUserRole(String role) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(keyUserRole, role.toLowerCase());
+  }
+
+  static Future<String?> getUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(keyUserRole);
   }
 }
 
